@@ -42,51 +42,53 @@ func (d *TeamsDataSource) Metadata(ctx context.Context, req datasource.MetadataR
 	resp.TypeName = req.ProviderTypeName + "_teams"
 }
 
+var teamSchemaAttributes = schema.ListNestedAttribute{
+	Computed:            true,
+	MarkdownDescription: "The list of teams for an organization.",
+	NestedObject: schema.NestedAttributeObject{
+		Attributes: map[string]schema.Attribute{
+			"can_create_org_repo": schema.BoolAttribute{
+				Computed:            true,
+				MarkdownDescription: "Whether members of this team can create repositories that will belong to the organization.",
+			},
+			"description": schema.StringAttribute{
+				Computed:            true,
+				MarkdownDescription: "A description string.",
+			},
+			"id": schema.Int64Attribute{
+				Computed:            true,
+				MarkdownDescription: "The identifier of the team.",
+			},
+			"includes_all_repositories": schema.BoolAttribute{
+				Computed:            true,
+				MarkdownDescription: "Whether members of this team can access all the repositories that belong to the organization.",
+			},
+			"name": schema.StringAttribute{
+				Computed:            true,
+				MarkdownDescription: "The team's name are a part of.",
+			},
+			"permission": schema.StringAttribute{
+				Computed:            true,
+				MarkdownDescription: "The members' permission level on the organization.",
+			},
+			"units": schema.ListAttribute{
+				Computed:            true,
+				ElementType:         types.StringType,
+				MarkdownDescription: "The list of units permissions.",
+			},
+			"units_map": schema.MapAttribute{
+				Computed:            true,
+				ElementType:         types.StringType,
+				MarkdownDescription: "The map of units permissions and their level.",
+			},
+		},
+	},
+}
+
 func (d *TeamsDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
-			"elements": schema.ListNestedAttribute{
-				Computed:            true,
-				MarkdownDescription: "The list of teams for an organization.",
-				NestedObject: schema.NestedAttributeObject{
-					Attributes: map[string]schema.Attribute{
-						"can_create_org_repo": schema.BoolAttribute{
-							Computed:            true,
-							MarkdownDescription: "Whether members of this team can create repositories that will belong to the organization.",
-						},
-						"description": schema.StringAttribute{
-							Computed:            true,
-							MarkdownDescription: "A description string.",
-						},
-						"id": schema.Int64Attribute{
-							Computed:            true,
-							MarkdownDescription: "The identifier of the team.",
-						},
-						"includes_all_repositories": schema.BoolAttribute{
-							Computed:            true,
-							MarkdownDescription: "Whether members of this team can access all the repositories that belong to the organization.",
-						},
-						"name": schema.StringAttribute{
-							Computed:            true,
-							MarkdownDescription: "The team's name are a part of.",
-						},
-						"permission": schema.StringAttribute{
-							Computed:            true,
-							MarkdownDescription: "The members' permission level on the organization.",
-						},
-						"units": schema.ListAttribute{
-							Computed:            true,
-							ElementType:         types.StringType,
-							MarkdownDescription: "The list of units permissions.",
-						},
-						"units_map": schema.MapAttribute{
-							Computed:            true,
-							ElementType:         types.StringType,
-							MarkdownDescription: "The map of units permissions and their level.",
-						},
-					},
-				},
-			},
+			"elements": teamSchemaAttributes,
 			"organization_name": schema.StringAttribute{
 				MarkdownDescription: "The name of the organization the teams are a part of.",
 				Required:            true,
@@ -98,6 +100,19 @@ func (d *TeamsDataSource) Schema(ctx context.Context, req datasource.SchemaReque
 
 func (d *TeamsDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	d.client, _ = req.ProviderData.(*client.Client)
+}
+
+func populateTeamDataSourceModel(team *client.Team) *TeamDataSourceModel {
+	return &TeamDataSourceModel{
+		CanCreateOrgRepo:        types.BoolValue(team.CanCreateOrgRepo),
+		Description:             types.StringValue(team.Description),
+		Id:                      types.Int64Value(team.Id),
+		IncludesAllRepositories: types.BoolValue(team.IncludesAllRepositories),
+		Name:                    types.StringValue(team.Name),
+		Permission:              types.StringValue(team.Permission),
+		Units:                   make([]types.String, len(team.Units)),
+		UnitsMap:                make(map[string]types.String),
+	}
 }
 
 func (d *TeamsDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
@@ -113,16 +128,7 @@ func (d *TeamsDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 	}
 	teamsList := make([]TeamDataSourceModel, len(teams))
 	for i, team := range teams {
-		teamsList[i] = TeamDataSourceModel{
-			CanCreateOrgRepo:        types.BoolValue(team.CanCreateOrgRepo),
-			Description:             types.StringValue(team.Description),
-			Id:                      types.Int64Value(team.Id),
-			IncludesAllRepositories: types.BoolValue(team.IncludesAllRepositories),
-			Name:                    types.StringValue(team.Name),
-			Permission:              types.StringValue(team.Permission),
-			Units:                   make([]types.String, len(team.Units)),
-			UnitsMap:                make(map[string]types.String),
-		}
+		teamsList[i] = *populateTeamDataSourceModel(&team)
 		slices.Sort(team.Units)
 		for j, unit := range team.Units {
 			teamsList[i].Units[j] = types.StringValue(unit)

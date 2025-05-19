@@ -53,6 +53,103 @@ func (d *UsersDataSource) Metadata(ctx context.Context, req datasource.MetadataR
 	resp.TypeName = req.ProviderTypeName + "_users"
 }
 
+var userSchemaAttributes = map[string]schema.Attribute{
+	"active": schema.BoolAttribute{
+		Computed:            true,
+		MarkdownDescription: "Whether the user is active or not.",
+	},
+	"avatar_url": schema.StringAttribute{
+		Computed:            true,
+		MarkdownDescription: "The user's avatar URL.",
+	},
+	"created": schema.StringAttribute{
+		Computed:            true,
+		CustomType:          timetypes.RFC3339Type{},
+		MarkdownDescription: "The user's creation date and time.",
+	},
+	"description": schema.StringAttribute{
+		Computed:            true,
+		MarkdownDescription: "A description string.",
+	},
+	"email": schema.StringAttribute{
+		Computed:            true,
+		MarkdownDescription: "The user's email address.",
+	},
+	"followers_count": schema.Int64Attribute{
+		Computed:            true,
+		MarkdownDescription: "The number of followers.",
+	},
+	"following_count": schema.Int64Attribute{
+		Computed:            true,
+		MarkdownDescription: "The number of followings.",
+	},
+	"full_name": schema.StringAttribute{
+		Computed:            true,
+		MarkdownDescription: "The user's full name.",
+	},
+	"html_url": schema.StringAttribute{
+		Computed:            true,
+		MarkdownDescription: "The URL to this user's Forgejo profile page.",
+	},
+	"id": schema.Int64Attribute{
+		Computed:            true,
+		MarkdownDescription: "The identifier of the user.",
+	},
+	"is_admin": schema.BoolAttribute{
+		Computed:            true,
+		MarkdownDescription: "Whether the user is an admin or not.",
+	},
+	"language": schema.StringAttribute{
+		Computed:            true,
+		MarkdownDescription: "The user's chosen language.",
+	},
+	"last_login": schema.StringAttribute{
+		Computed:            true,
+		CustomType:          timetypes.RFC3339Type{},
+		MarkdownDescription: "The user's last login date and time.",
+	},
+	"location": schema.StringAttribute{
+		Computed:            true,
+		MarkdownDescription: "The user's advertised location.",
+	},
+	"login_name": schema.StringAttribute{
+		Computed:            true,
+		MarkdownDescription: "The user's authentication sign-in name.",
+	},
+	"login": schema.StringAttribute{
+		Computed:            true,
+		MarkdownDescription: "The login of the user.",
+	},
+	"prohibit_login": schema.BoolAttribute{
+		Computed:            true,
+		MarkdownDescription: "Whether the user is allowed to log in or not.",
+	},
+	"pronouns": schema.StringAttribute{
+		Computed:            true,
+		MarkdownDescription: "The user's advertised pronouns.",
+	},
+	"restricted": schema.BoolAttribute{
+		Computed:            true,
+		MarkdownDescription: "Whether the user is restricted or not.",
+	},
+	"source_id": schema.Int64Attribute{
+		Computed:            true,
+		MarkdownDescription: "The identifier of the users authentication source.",
+	},
+	"starred_repos_count": schema.Int64Attribute{
+		Computed:            true,
+		MarkdownDescription: "The number of repositoties starred by the user.",
+	},
+	"visibility": schema.StringAttribute{
+		Computed:            true,
+		MarkdownDescription: "The user's visibility option: limited, private, public.",
+	},
+	"website": schema.StringAttribute{
+		Computed:            true,
+		MarkdownDescription: "The user's advertised website.",
+	},
+}
+
 func (d *UsersDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
@@ -60,102 +157,7 @@ func (d *UsersDataSource) Schema(ctx context.Context, req datasource.SchemaReque
 				Computed:            true,
 				MarkdownDescription: "The list of users.",
 				NestedObject: schema.NestedAttributeObject{
-					Attributes: map[string]schema.Attribute{
-						"active": schema.BoolAttribute{
-							Computed:            true,
-							MarkdownDescription: "Whether the user is active or not.",
-						},
-						"avatar_url": schema.StringAttribute{
-							Computed:            true,
-							MarkdownDescription: "The user's avatar URL.",
-						},
-						"created": schema.StringAttribute{
-							Computed:            true,
-							CustomType:          timetypes.RFC3339Type{},
-							MarkdownDescription: "The user's creation date and time.",
-						},
-						"description": schema.StringAttribute{
-							Computed:            true,
-							MarkdownDescription: "A description string.",
-						},
-						"email": schema.StringAttribute{
-							Computed:            true,
-							MarkdownDescription: "The user's email address.",
-						},
-						"followers_count": schema.Int64Attribute{
-							Computed:            true,
-							MarkdownDescription: "The number of followers.",
-						},
-						"following_count": schema.Int64Attribute{
-							Computed:            true,
-							MarkdownDescription: "The number of followings.",
-						},
-						"full_name": schema.StringAttribute{
-							Computed:            true,
-							MarkdownDescription: "The user's full name.",
-						},
-						"html_url": schema.StringAttribute{
-							Computed:            true,
-							MarkdownDescription: "The URL to this user's Forgejo profile page.",
-						},
-						"id": schema.Int64Attribute{
-							Computed:            true,
-							MarkdownDescription: "The identifier of the user.",
-						},
-						"is_admin": schema.BoolAttribute{
-							Computed:            true,
-							MarkdownDescription: "Whether the user is an admin or not.",
-						},
-						"language": schema.StringAttribute{
-							Computed:            true,
-							MarkdownDescription: "The user's chosen language.",
-						},
-						"last_login": schema.StringAttribute{
-							Computed:            true,
-							CustomType:          timetypes.RFC3339Type{},
-							MarkdownDescription: "The user's last login date and time.",
-						},
-						"location": schema.StringAttribute{
-							Computed:            true,
-							MarkdownDescription: "The user's advertised location.",
-						},
-						"login_name": schema.StringAttribute{
-							Computed:            true,
-							MarkdownDescription: "The user's authentication sign-in name.",
-						},
-						"login": schema.StringAttribute{
-							Computed:            true,
-							MarkdownDescription: "The login of the user.",
-						},
-						"prohibit_login": schema.BoolAttribute{
-							Computed:            true,
-							MarkdownDescription: "Whether the user is allowed to log in or not.",
-						},
-						"pronouns": schema.StringAttribute{
-							Computed:            true,
-							MarkdownDescription: "The user's advertised pronouns.",
-						},
-						"restricted": schema.BoolAttribute{
-							Computed:            true,
-							MarkdownDescription: "Whether the user is restricted or not.",
-						},
-						"source_id": schema.Int64Attribute{
-							Computed:            true,
-							MarkdownDescription: "The identifier of the users authentication source.",
-						},
-						"starred_repos_count": schema.Int64Attribute{
-							Computed:            true,
-							MarkdownDescription: "The number of repositoties starred by the user.",
-						},
-						"visibility": schema.StringAttribute{
-							Computed:            true,
-							MarkdownDescription: "The user's visibility option: limited, private, public.",
-						},
-						"website": schema.StringAttribute{
-							Computed:            true,
-							MarkdownDescription: "The user's advertised website.",
-						},
-					},
+					Attributes: userSchemaAttributes,
 				},
 			},
 		},
@@ -165,6 +167,34 @@ func (d *UsersDataSource) Schema(ctx context.Context, req datasource.SchemaReque
 
 func (d *UsersDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	d.client, _ = req.ProviderData.(*client.Client)
+}
+
+func populateUserDataSourceModel(user *client.User) *UserDataSourceModel {
+	return &UserDataSourceModel{
+		Active:           types.BoolValue(user.Active),
+		AvatarUrl:        types.StringValue(user.AvatarUrl),
+		Created:          timetypes.NewRFC3339TimeValue(user.Created),
+		Description:      types.StringValue(user.Description),
+		Email:            types.StringValue(user.Email),
+		FollowerCount:    types.Int64Value(user.FollowerCount),
+		FollowingCount:   types.Int64Value(user.FollowingCount),
+		FullName:         types.StringValue(user.FullName),
+		HtmlUrl:          types.StringValue(user.HtmlUrl),
+		Id:               types.Int64Value(user.Id),
+		IsAdmin:          types.BoolValue(user.IsAdmin),
+		Language:         types.StringValue(user.Language),
+		LastLogin:        timetypes.NewRFC3339TimeValue(user.LastLogin),
+		Location:         types.StringValue(user.Location),
+		LoginName:        types.StringValue(user.LoginName),
+		Login:            types.StringValue(user.Login),
+		ProhibitLogin:    types.BoolValue(user.ProhibitLogin),
+		Pronouns:         types.StringValue(user.Pronouns),
+		Restricted:       types.BoolValue(user.Restricted),
+		SourceId:         types.Int64Value(user.SourceId),
+		StarredRepoCount: types.Int64Value(user.StarredRepoCount),
+		Visibility:       types.StringValue(user.Visibility),
+		Website:          types.StringValue(user.Website),
+	}
 }
 
 func (d *UsersDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
@@ -180,31 +210,7 @@ func (d *UsersDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 	}
 	userList := make([]UserDataSourceModel, len(users))
 	for i, user := range users {
-		userList[i] = UserDataSourceModel{
-			Active:           types.BoolValue(user.Active),
-			AvatarUrl:        types.StringValue(user.AvatarUrl),
-			Created:          timetypes.NewRFC3339TimeValue(user.Created),
-			Description:      types.StringValue(user.Description),
-			Email:            types.StringValue(user.Email),
-			FollowerCount:    types.Int64Value(user.FollowerCount),
-			FollowingCount:   types.Int64Value(user.FollowingCount),
-			FullName:         types.StringValue(user.FullName),
-			HtmlUrl:          types.StringValue(user.HtmlUrl),
-			Id:               types.Int64Value(user.Id),
-			IsAdmin:          types.BoolValue(user.IsAdmin),
-			Language:         types.StringValue(user.Language),
-			LastLogin:        timetypes.NewRFC3339TimeValue(user.LastLogin),
-			Location:         types.StringValue(user.Location),
-			LoginName:        types.StringValue(user.LoginName),
-			Login:            types.StringValue(user.Login),
-			ProhibitLogin:    types.BoolValue(user.ProhibitLogin),
-			Pronouns:         types.StringValue(user.Pronouns),
-			Restricted:       types.BoolValue(user.Restricted),
-			SourceId:         types.Int64Value(user.SourceId),
-			StarredRepoCount: types.Int64Value(user.StarredRepoCount),
-			Visibility:       types.StringValue(user.Visibility),
-			Website:          types.StringValue(user.Website),
-		}
+		userList[i] = *populateUserDataSourceModel(&user)
 	}
 	data.Elements = userList
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
