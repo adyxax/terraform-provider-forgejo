@@ -21,14 +21,8 @@ type Organization struct {
 
 func (c *Client) OrganizationsList(ctx context.Context) ([]Organization, error) {
 	var response []Organization
-	query := make(url.Values)
-	query.Set("limit", "50")
-	query.Set("page", "1")
-	uriRef := url.URL{
-		Path:     "api/v1/orgs",
-		RawQuery: query.Encode(),
-	}
-	if err := c.Send(ctx, "GET", &uriRef, nil, &response); err != nil {
+	uriRef := url.URL{Path: "api/v1/orgs"}
+	if err := c.sendPaginated(ctx, "GET", &uriRef, nil, &response); err != nil {
 		return nil, fmt.Errorf("failed to get organizations: %w", err)
 	}
 	return response, nil

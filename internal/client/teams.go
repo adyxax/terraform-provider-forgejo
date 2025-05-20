@@ -21,14 +21,8 @@ type Team struct {
 
 func (c *Client) TeamsList(ctx context.Context, organizationName string) ([]Team, error) {
 	var response []Team
-	query := make(url.Values)
-	query.Set("limit", "50")
-	query.Set("page", "1")
-	uriRef := url.URL{
-		Path:     path.Join("api/v1/orgs", organizationName, "teams"),
-		RawQuery: query.Encode(),
-	}
-	if err := c.Send(ctx, "GET", &uriRef, nil, &response); err != nil {
+	uriRef := url.URL{Path: path.Join("api/v1/orgs", organizationName, "teams")}
+	if err := c.sendPaginated(ctx, "GET", &uriRef, nil, &response); err != nil {
 		return nil, fmt.Errorf("failed to list teams of organization %s: %w", organizationName, err)
 	}
 	return response, nil

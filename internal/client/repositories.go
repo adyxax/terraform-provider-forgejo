@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"strconv"
 	"time"
 )
 
@@ -104,19 +105,26 @@ func (c *Client) RepositoriesList(ctx context.Context) ([]Repository, error) {
 		Data []Repository `json:"data"`
 		Ok   bool         `json:"ok"`
 	}
-	var response Response
+	uriRef := url.URL{Path: "api/v1/repos/search"}
 	query := make(url.Values)
-	query.Set("limit", "50")
-	query.Set("page", "1")
-	uriRef := url.URL{
-		Path:     "api/v1/repos/search",
-		RawQuery: query.Encode(),
+	query.Set("limit", maxItemsPerPageStr)
+	page := 1
+	var repositories []Repository
+	var response Response
+	for {
+		query.Set("page", strconv.Itoa(page))
+		uriRef.RawQuery = query.Encode()
+		count, err := c.Send(ctx, "GET", &uriRef, nil, &response)
+		if err != nil {
+			return nil, fmt.Errorf("failed to search repositories: %w", err)
+		}
+		if !response.Ok {
+			return nil, fmt.Errorf("got a non OK status when searching repositories")
+		}
+		repositories = append(repositories, response.Data...)
+		if count <= page*maxItemsPerPage {
+			return repositories, nil
+		}
+		page++
 	}
-	if err := c.Send(ctx, "GET", &uriRef, nil, &response); err != nil {
-		return nil, fmt.Errorf("failed to search repositories: %w", err)
-	}
-	if !response.Ok {
-		return response.Data, fmt.Errorf("got a non OK status when querying repos/search")
-	}
-	return response.Data, nil
 }

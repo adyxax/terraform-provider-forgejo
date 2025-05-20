@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"strconv"
 	"time"
 )
 
@@ -38,19 +39,26 @@ func (c *Client) UsersList(ctx context.Context) ([]User, error) {
 		Data []User `json:"data"`
 		Ok   bool   `json:"ok"`
 	}
-	var response Response
+	uriRef := url.URL{Path: "api/v1/users/search"}
 	query := make(url.Values)
-	query.Set("limit", "50")
-	query.Set("page", "1")
-	uriRef := url.URL{
-		Path:     "api/v1/users/search",
-		RawQuery: query.Encode(),
+	query.Set("limit", maxItemsPerPageStr)
+	page := 1
+	var users []User
+	var response Response
+	for {
+		query.Set("page", strconv.Itoa(page))
+		uriRef.RawQuery = query.Encode()
+		count, err := c.Send(ctx, "GET", &uriRef, nil, &response)
+		if err != nil {
+			return nil, fmt.Errorf("failed to search users: %w", err)
+		}
+		if !response.Ok {
+			return nil, fmt.Errorf("got a non OK status when searching users")
+		}
+		users = append(users, response.Data...)
+		if count <= page*maxItemsPerPage {
+			return users, nil
+		}
+		page++
 	}
-	if err := c.Send(ctx, "GET", &uriRef, nil, &response); err != nil {
-		return nil, fmt.Errorf("failed to search users: %w", err)
-	}
-	if !response.Ok {
-		return response.Data, fmt.Errorf("got a non OK status when querying users/search")
-	}
-	return response.Data, nil
 }
