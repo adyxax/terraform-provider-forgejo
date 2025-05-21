@@ -47,7 +47,7 @@ func (c *Client) sendPaginated(ctx context.Context, method string, uriRef *url.U
 		query.Set("page", strconv.Itoa(page))
 		uriRef.RawQuery = query.Encode()
 		var res json.RawMessage
-		count, err := c.Send(ctx, method, uriRef, payload, &res)
+		count, err := c.send(ctx, method, uriRef, payload, &res)
 		if err != nil {
 			return fmt.Errorf("failed to send: %w", err)
 		}
@@ -71,7 +71,7 @@ func (c *Client) sendPaginated(ctx context.Context, method string, uriRef *url.U
 	return nil
 }
 
-func (c *Client) Send(ctx context.Context, method string, uriRef *url.URL, payload any, response any) (int, error) {
+func (c *Client) send(ctx context.Context, method string, uriRef *url.URL, payload any, response any) (int, error) {
 	uri := c.baseURI.ResolveReference(uriRef)
 
 	var payloadReader io.Reader
@@ -101,8 +101,10 @@ func (c *Client) Send(ctx context.Context, method string, uriRef *url.URL, paylo
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return 0, fmt.Errorf("non 2XX status code received: %d, %q", resp.StatusCode, body)
 	}
-	if err = json.Unmarshal(body, response); err != nil {
-		return 0, fmt.Errorf("response body unmarshal failed: %w", err)
+	if len(body) > 0 {
+		if err = json.Unmarshal(body, response); err != nil {
+			return 0, fmt.Errorf("response body unmarshal failed %s: %w", string(body), err)
+		}
 	}
 	if count, err := strconv.Atoi(resp.Header.Get("x-total-count")); err != nil {
 		return 0, nil

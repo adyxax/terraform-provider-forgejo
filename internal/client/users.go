@@ -48,7 +48,7 @@ func (c *Client) UsersList(ctx context.Context) ([]User, error) {
 	for {
 		query.Set("page", strconv.Itoa(page))
 		uriRef.RawQuery = query.Encode()
-		count, err := c.Send(ctx, "GET", &uriRef, nil, &response)
+		count, err := c.send(ctx, "GET", &uriRef, nil, &response)
 		if err != nil {
 			return nil, fmt.Errorf("failed to search users: %w", err)
 		}
