@@ -9,5 +9,6 @@ All notable changes to this project will be documented in this file.
 - Added provider configuration.
 - Added organizations data-source.
 - Added repositories data-source.
+- Added repository actions secret resource.
 - Added teams data-source.
 - Added users data-source.
