@@ -84,14 +84,14 @@ func (d *RepositoryActionsSecretResource) Create(ctx context.Context, req resour
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	err := d.client.RepoActionSecretPut(
+	err := d.client.RepositoryActionsSecretCreateOrUpdate(
 		ctx,
 		data.Owner.ValueString(),
 		data.Repository.ValueString(),
 		data.Name.ValueString(),
 		data.Data.ValueString())
 	if err != nil {
-		resp.Diagnostics.AddError("CreateRepositoryActionsSecret", fmt.Sprintf("failed to put repository actions secret: %s", err))
+		resp.Diagnostics.AddError("CreateRepositoryActionsSecret", fmt.Sprintf("failed to create or update repository actions secret: %s", err))
 		return
 	}
 	created, err := d.getRepositoryActionsSecret(ctx, data.Owner, data.Repository, data.Name)
@@ -109,7 +109,7 @@ func (d *RepositoryActionsSecretResource) Delete(ctx context.Context, req resour
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	err := d.client.RepoActionSecretDelete(
+	err := d.client.RepositoryActionsSecretDelete(
 		ctx,
 		data.Owner.ValueString(),
 		data.Repository.ValueString(),
@@ -126,7 +126,7 @@ func (d *RepositoryActionsSecretResource) getRepositoryActionsSecret(
 	repository types.String,
 	name types.String,
 ) (*timetypes.RFC3339, error) {
-	secrets, err := d.client.RepoActionSecretsList(
+	secrets, err := d.client.RepositoryActionsSecretsList(
 		ctx,
 		owner.ValueString(),
 		repository.ValueString())
@@ -164,14 +164,14 @@ func (d *RepositoryActionsSecretResource) Update(ctx context.Context, req resour
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	err := d.client.RepoActionSecretPut(
+	err := d.client.RepositoryActionsSecretCreateOrUpdate(
 		ctx,
 		data.Owner.ValueString(),
 		data.Repository.ValueString(),
 		data.Name.ValueString(),
 		data.Data.ValueString())
 	if err != nil {
-		resp.Diagnostics.AddError("UpdateRepositoryActionsSecret", fmt.Sprintf("failed to put repository actions secret: %s", err))
+		resp.Diagnostics.AddError("UpdateRepositoryActionsSecret", fmt.Sprintf("failed to create or update repository actions secret: %s", err))
 		return
 	}
 	created, err := d.getRepositoryActionsSecret(ctx, data.Owner, data.Repository, data.Name)

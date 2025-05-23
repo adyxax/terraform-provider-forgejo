@@ -7,7 +7,7 @@ import (
 	"path"
 )
 
-type Team struct {
+type OrganizationTeam struct {
 	CanCreateOrgRepo        bool              `json:"can_create_org_repo"`
 	Description             string            `json:"description"`
 	Id                      int64             `json:"id"`
@@ -19,8 +19,8 @@ type Team struct {
 	UnitsMap                map[string]string `json:"units_map"`
 }
 
-func (c *Client) TeamsList(ctx context.Context, organizationName string) ([]Team, error) {
-	var response []Team
+func (c *Client) OrganizationTeamsList(ctx context.Context, organizationName string) ([]OrganizationTeam, error) {
+	var response []OrganizationTeam
 	uriRef := url.URL{Path: path.Join("api/v1/orgs", organizationName, "teams")}
 	if err := c.sendPaginated(ctx, "GET", &uriRef, nil, &response); err != nil {
 		return nil, fmt.Errorf("failed to list teams of organization %s: %w", organizationName, err)

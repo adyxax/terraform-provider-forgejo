@@ -102,7 +102,7 @@ func (d *TeamsDataSource) Configure(ctx context.Context, req datasource.Configur
 	d.client, _ = req.ProviderData.(*client.Client)
 }
 
-func populateTeamDataSourceModel(team *client.Team) *TeamDataSourceModel {
+func populateTeamDataSourceModel(team *client.OrganizationTeam) *TeamDataSourceModel {
 	return &TeamDataSourceModel{
 		CanCreateOrgRepo:        types.BoolValue(team.CanCreateOrgRepo),
 		Description:             types.StringValue(team.Description),
@@ -121,7 +121,7 @@ func (d *TeamsDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	teams, err := d.client.TeamsList(ctx, data.OrganizationName.ValueString())
+	teams, err := d.client.OrganizationTeamsList(ctx, data.OrganizationName.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("ListTeams", fmt.Sprintf("failed to list teams: %s", err))
 		return
