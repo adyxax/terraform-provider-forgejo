@@ -15,7 +15,7 @@ Use this resource to create and manage a repository actions secret.
 ```terraform
 resource "forgejo_repository_actions_secret" {
   data       = "secret"
-  name       = "test"
+  name       = "TEST"
   owner      = "adyxax"
   repository = "example"
 }
@@ -27,7 +27,7 @@ resource "forgejo_repository_actions_secret" {
 ### Required
 
 - `data` (String, Sensitive) The secret's data.
-- `name` (String) The secret's name.
+- `name` (String) The secret's name. It must be uppercase or the plan will not be idempotent.
 - `owner` (String) The secret's owner.
 - `repository` (String) The secret's repository.
 

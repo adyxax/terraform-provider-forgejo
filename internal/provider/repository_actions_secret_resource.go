@@ -49,7 +49,7 @@ func (d *RepositoryActionsSecretResource) Schema(ctx context.Context, req resour
 				Sensitive:           true,
 			},
 			"name": schema.StringAttribute{
-				MarkdownDescription: "The secret's name.",
+				MarkdownDescription: "The secret's name. It must be uppercase or the plan will not be idempotent.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -94,12 +94,12 @@ func (d *RepositoryActionsSecretResource) Create(ctx context.Context, req resour
 		resp.Diagnostics.AddError("CreateRepositoryActionsSecret", fmt.Sprintf("failed to create or update repository actions secret: %s", err))
 		return
 	}
-	created, err := d.getRepositoryActionsSecret(ctx, data.Owner, data.Repository, data.Name)
+	secret, err := d.getRepositoryActionsSecret(ctx, data.Owner, data.Repository, data.Name)
 	if err != nil {
 		resp.Diagnostics.AddError("CreateRepositoryActionsSecret", err.Error())
 		return
 	}
-	data.CreatedAt = *created
+	data.CreatedAt = secret.CreatedAt
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -125,7 +125,7 @@ func (d *RepositoryActionsSecretResource) getRepositoryActionsSecret(
 	owner types.String,
 	repository types.String,
 	name types.String,
-) (*timetypes.RFC3339, error) {
+) (*RepositoryActionsSecretResourceModel, error) {
 	secrets, err := d.client.RepositoryActionsSecretsList(
 		ctx,
 		owner.ValueString(),
@@ -137,7 +137,10 @@ func (d *RepositoryActionsSecretResource) getRepositoryActionsSecret(
 	for _, secret := range secrets {
 		if secret.Name == nameStr {
 			created := timetypes.NewRFC3339TimeValue(secret.CreatedAt)
-			return &created, nil
+			return &RepositoryActionsSecretResourceModel{
+				CreatedAt: created,
+				Name:      types.StringValue(secret.Name),
+			}, nil
 		}
 	}
 	return nil, fmt.Errorf("failed to find repository actions secret")
@@ -149,18 +152,19 @@ func (d *RepositoryActionsSecretResource) Read(ctx context.Context, req resource
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	created, err := d.getRepositoryActionsSecret(ctx, data.Owner, data.Repository, data.Name)
+	secret, err := d.getRepositoryActionsSecret(ctx, data.Owner, data.Repository, data.Name)
 	if err != nil {
 		resp.Diagnostics.AddError("CreateRepositoryActionsSecret", err.Error())
 		return
 	}
-	data.CreatedAt = *created
+	data.CreatedAt = secret.CreatedAt
+	data.Name = secret.Name
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
 func (d *RepositoryActionsSecretResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var data RepositoryActionsSecretResourceModel
-	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -174,10 +178,11 @@ func (d *RepositoryActionsSecretResource) Update(ctx context.Context, req resour
 		resp.Diagnostics.AddError("UpdateRepositoryActionsSecret", fmt.Sprintf("failed to create or update repository actions secret: %s", err))
 		return
 	}
-	created, err := d.getRepositoryActionsSecret(ctx, data.Owner, data.Repository, data.Name)
+	secret, err := d.getRepositoryActionsSecret(ctx, data.Owner, data.Repository, data.Name)
 	if err != nil {
 		resp.Diagnostics.AddError("UpdateRepositoryActionsSecret", err.Error())
 		return
 	}
-	data.CreatedAt = *created
+	data.CreatedAt = secret.CreatedAt
+	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }

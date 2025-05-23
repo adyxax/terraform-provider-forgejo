@@ -1,6 +1,6 @@
 resource "forgejo_repository_actions_secret" {
   data       = "secret"
-  name       = "test"
+  name       = "TEST"
   owner      = "adyxax"
   repository = "example"
 }
