@@ -34,5 +34,8 @@ provider "forgejo" {
 
 ### Required
 
-- `api_token` (String, Sensitive) Forgejo's api token
-- `base_uri` (String) Forgejo's HTTP base uri
+- `base_uri` (String) Forgejo's HTTP base URI.
+
+### Optional
+
+- `api_token` (String, Sensitive) Forgejo's api token. If not defined, the content of the environment variable `FORGEJO_API_TOKEN` will be used instead.

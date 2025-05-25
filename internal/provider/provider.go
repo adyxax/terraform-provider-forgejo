@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"os"
 
 	"git.adyxax.org/adyxax/terraform-provider-forgejo/internal/client"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -40,12 +41,12 @@ func (p *Provider) Schema(ctx context.Context, req provider.SchemaRequest, resp 
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
 			"api_token": schema.StringAttribute{
-				MarkdownDescription: "Forgejo's api token",
-				Required:            true,
+				MarkdownDescription: "Forgejo's api token. If not defined, the content of the environment variable `FORGEJO_API_TOKEN` will be used instead.",
+				Optional:            true,
 				Sensitive:           true,
 			},
 			"base_uri": schema.StringAttribute{
-				MarkdownDescription: "Forgejo's HTTP base uri",
+				MarkdownDescription: "Forgejo's HTTP base URI.",
 				Required:            true,
 			},
 		},
@@ -61,14 +62,20 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 
 	baseURI, err := url.Parse(data.BaseURI.ValueString())
 	if err != nil {
-		resp.Diagnostics.AddError(
-			"Invalid base_uri",
-			fmt.Sprintf(
-				"failed to parse base_uri: %s",
-				err))
+		resp.Diagnostics.AddError("Invalid forgejo base_uri", fmt.Sprintf("failed to parse base_uri: %s", err))
 		return
 	}
-	client := client.NewClient(baseURI, data.ApiToken.ValueString())
+	var apiToken string
+	if data.ApiToken.IsNull() {
+		apiToken = os.Getenv("FORGEJO_API_TOKEN")
+		if apiToken == "" {
+			resp.Diagnostics.AddError("Invalid forgejo api_token", "environment variable FORGEJO_API_TOKEN not found")
+			return
+		}
+	} else {
+		apiToken = data.ApiToken.ValueString()
+	}
+	client := client.NewClient(baseURI, apiToken)
 
 	resp.DataSourceData = client
 	resp.ResourceData = client
