@@ -13,7 +13,7 @@ Use this resource to create and manage a repository actions secret.
 ## Example Usage
 
 ```terraform
-resource "forgejo_repository_actions_secret" {
+resource "forgejo_repository_actions_secret" "main" {
   data       = "secret"
   name       = "TEST"
   owner      = "adyxax"

@@ -1,4 +1,4 @@
-resource "forgejo_repository_actions_variable" {
+resource "forgejo_repository_actions_variable" "main" {
   data       = "value"
   name       = "test"
   owner      = "adyxax"

@@ -13,7 +13,7 @@ Use this resource to create and manage a repository actions variable.
 ## Example Usage
 
 ```terraform
-resource "forgejo_repository_actions_variable" {
+resource "forgejo_repository_actions_variable" "main" {
   data       = "value"
   name       = "test"
   owner      = "adyxax"
