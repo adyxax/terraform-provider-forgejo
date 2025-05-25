@@ -13,16 +13,15 @@ import (
 )
 
 type Client struct {
-	baseURI    *url.URL
-	headers    *http.Header
-	httpClient *http.Client
+	baseURI            *url.URL
+	headers            *http.Header
+	httpClient         *http.Client
+	maxItemsPerPage    int
+	maxItemsPerPageStr string
 }
 
-const maxItemsPerPage = 50
-const maxItemsPerPageStr = "50"
-
-func NewClient(baseURL *url.URL, apiToken string) *Client {
-	return &Client{
+func NewClient(baseURL *url.URL, apiToken string) (*Client, error) {
+	c := Client{
 		baseURI: baseURL,
 		headers: &http.Header{
 			"Accept":        {"application/json"},
@@ -33,6 +32,13 @@ func NewClient(baseURL *url.URL, apiToken string) *Client {
 			Timeout: time.Minute,
 		},
 	}
+	settings, err := c.settingsApiGet()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get settings api: %w", err)
+	}
+	c.maxItemsPerPage = settings.MaxResponseItems
+	c.maxItemsPerPageStr = strconv.Itoa(c.maxItemsPerPage)
+	return &c, nil
 }
 
 func (c *Client) sendPaginated(ctx context.Context, method string, uriRef *url.URL, payload any, response any) error {
@@ -40,7 +46,7 @@ func (c *Client) sendPaginated(ctx context.Context, method string, uriRef *url.U
 	if err != nil {
 		return fmt.Errorf("failed to parse query string: %w", err)
 	}
-	query.Set("limit", maxItemsPerPageStr)
+	query.Set("limit", c.maxItemsPerPageStr)
 	page := 1
 	var rawResponses []json.RawMessage
 	for {
@@ -56,7 +62,7 @@ func (c *Client) sendPaginated(ctx context.Context, method string, uriRef *url.U
 			return fmt.Errorf("failed to unmarshal message: %w", err)
 		}
 		rawResponses = append(rawResponses, oneResponse...)
-		if count <= page*maxItemsPerPage {
+		if count <= page*c.maxItemsPerPage {
 			break
 		}
 		page++

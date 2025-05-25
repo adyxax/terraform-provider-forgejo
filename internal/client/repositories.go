@@ -107,7 +107,7 @@ func (c *Client) RepositoriesList(ctx context.Context) ([]Repository, error) {
 	}
 	uriRef := url.URL{Path: "api/v1/repos/search"}
 	query := make(url.Values)
-	query.Set("limit", maxItemsPerPageStr)
+	query.Set("limit", c.maxItemsPerPageStr)
 	page := 1
 	var repositories []Repository
 	var response Response
@@ -122,7 +122,7 @@ func (c *Client) RepositoriesList(ctx context.Context) ([]Repository, error) {
 			return nil, fmt.Errorf("got a non OK status when searching repositories")
 		}
 		repositories = append(repositories, response.Data...)
-		if count <= page*maxItemsPerPage {
+		if count <= page*c.maxItemsPerPage {
 			return repositories, nil
 		}
 		page++

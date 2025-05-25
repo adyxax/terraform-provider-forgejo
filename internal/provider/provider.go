@@ -75,7 +75,11 @@ func (p *Provider) Configure(ctx context.Context, req provider.ConfigureRequest,
 	} else {
 		apiToken = data.ApiToken.ValueString()
 	}
-	client := client.NewClient(baseURI, apiToken)
+	client, err := client.NewClient(baseURI, apiToken)
+	if err != nil {
+		resp.Diagnostics.AddError("failed to instantiate forgejo client", err.Error())
+		return
+	}
 
 	resp.DataSourceData = client
 	resp.ResourceData = client
