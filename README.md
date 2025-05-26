@@ -23,6 +23,4 @@ provider "forgejo" {
   api_token  = var.forgejo_api_token
   base_url = "https://git.adyxax.org/"
 }
-
-# TODO
 ```

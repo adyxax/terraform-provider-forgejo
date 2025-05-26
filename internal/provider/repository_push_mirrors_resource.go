@@ -187,5 +187,5 @@ func (d *RepositoryPushMirrorResource) Read(ctx context.Context, req resource.Re
 }
 
 func (d *RepositoryPushMirrorResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	resp.Diagnostics.AddError("UpdateRepositoryPushMirror", fmt.Sprintf("unreachable code"))
+	resp.Diagnostics.AddError("UpdateRepositoryPushMirror", "unreachable code")
 }

@@ -138,7 +138,7 @@ func (d *RepositoryActionsVariableResource) Update(ctx context.Context, req reso
 		plannedData.Name.ValueString(),
 		plannedData.Data.ValueString())
 	if err != nil {
-		resp.Diagnostics.AddError("UpdateRepositoryActionsVariable", fmt.Sprintf("failed to update repository actions variable %s %s: %s", stateData.Name.ValueString(), err))
+		resp.Diagnostics.AddError("UpdateRepositoryActionsVariable", fmt.Sprintf("failed to update repository actions variable: %s", err))
 		return
 	}
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plannedData)...)
