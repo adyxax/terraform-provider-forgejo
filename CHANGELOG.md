@@ -2,7 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
-## 1.0.0
+## 1.1.0 - Unreleased
+
+### Added
+
+- Added repository label resource.
+
+## 1.0.0 - 2025-05-27
 
 ### Added
 
