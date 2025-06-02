@@ -8,6 +8,10 @@ All notable changes to this project will be documented in this file.
 
 - Added repository label resource.
 
+### Changed
+
+- Updated dependencies.
+
 ## 1.0.0 - 2025-05-27
 
 ### Added
