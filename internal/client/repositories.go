@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"path"
 	"strconv"
 	"time"
 )
@@ -100,6 +101,94 @@ type Repository struct {
 	WikiBranch                    string                     `json:"wiki_branch"`
 }
 
+type RepositoryCreateRequest struct {
+	AutoInit                      bool   `json:"auto_init,omitempty"`
+	DefaultBranch                 string `json:"default_branch,omitempty"`
+	DefaultDeleteBranchAfterMerge bool   `json:"default_delete_branch_after_merge,omitempty"`
+	Description                   string `json:"description,omitempty"`
+	Gitignores                    string `json:"gitignores,omitempty"`
+	IssueLabels                   string `json:"issue_labels,omitempty"`
+	License                       string `json:"license,omitempty"`
+	Name                          string `json:"name,omitempty"`
+	ObjectFormatName              string `json:"object_format_name,omitempty"`
+	Private                       bool   `json:"private,omitempty"`
+	Readme                        string `json:"readme,omitempty"`
+	Template                      bool   `json:"template,omitempty"`
+	TrustModel                    string `json:"trust_model,omitempty"`
+}
+
+type RepositoryUpdateRequest struct {
+	AllowFastForwardOnlyMerge     bool                       `json:"allow_fast_forward_only_merge,omitempty"`
+	AllowManualMerge              bool                       `json:"allow_manual_merge,omitempty"`
+	AllowMergeCommits             bool                       `json:"allow_merge_commits,omitempty"`
+	AllowRebase                   bool                       `json:"allow_rebase,omitempty"`
+	AllowRebaseExplicit           bool                       `json:"allow_rebase_explicit,omitempty"`
+	AllowRebaseUpdate             bool                       `json:"allow_rebase_update,omitempty"`
+	AllowSquashMerge              bool                       `json:"allow_squash_merge,omitempty"`
+	Archived                      bool                       `json:"archived,omitempty"`
+	AutodetectManualMerge         bool                       `json:"autodetect_manual_merge,omitempty"`
+	DefaultAllowMaintainerEdit    bool                       `json:"default_allow_maintainer_edit,omitempty"`
+	DefaultBranch                 string                     `json:"default_branch,omitempty"`
+	DefaultDeleteBranchAfterMerge bool                       `json:"default_delete_branch_after_merge,omitempty"`
+	DefaultMergeStyle             string                     `json:"default_merge_style,omitempty"`
+	DefaultUpdateStyle            string                     `json:"default_update_style,omitempty"`
+	Description                   string                     `json:"description,omitempty"`
+	EnablePrune                   bool                       `json:"enable_prune,omitempty"`
+	ExternalTracker               *RepositoryExternalTracker `json:"external_tracker,omitempty"`
+	ExternalWiki                  *RepositoryExternalWiki    `json:"external_wiki,omitempty"`
+	GloballyEditableWiki          bool                       `json:"globally_editable_wiki,omitempty"`
+	HasActions                    bool                       `json:"has_actions,omitempty"`
+	HasIssues                     bool                       `json:"has_issues,omitempty"`
+	HasPackages                   bool                       `json:"has_packages,omitempty"`
+	HasProjects                   bool                       `json:"has_projects,omitempty"`
+	HasPullRequests               bool                       `json:"has_pull_requests,omitempty"`
+	HasReleases                   bool                       `json:"has_releases,omitempty"`
+	HasWiki                       bool                       `json:"has_wiki,omitempty"`
+	IgnoreWhitespaceConflicts     bool                       `json:"ignore_whitespace_conflicts,omitempty"`
+	InternalTracker               *RepositoryInternalTracker `json:"internal_tracker,omitempty"`
+	MirrorInterval                string                     `json:"mirror_interval,omitempty"`
+	Name                          string                     `json:"name,omitempty"`
+	Private                       bool                       `json:"private,omitempty"`
+	Template                      bool                       `json:"template,omitempty"`
+	Website                       string                     `json:"website,omitempty"`
+	WikiBranch                    string                     `json:"wiki_branch,omitempty"`
+}
+
+func (c *Client) OrganizationRepositoryCreate(ctx context.Context, owner string, payload *RepositoryCreateRequest) (*Repository, error) {
+	uriRef := url.URL{Path: path.Join("api/v1/orgs", owner, "repos")}
+	response := Repository{}
+	if _, err := c.send(ctx, "POST", &uriRef, payload, &response); err != nil {
+		return nil, fmt.Errorf("failed to create organization repository: %w", err)
+	}
+	return &response, nil
+}
+
+func (c *Client) UserRepositoryCreate(ctx context.Context, payload *RepositoryCreateRequest) (*Repository, error) {
+	uriRef := url.URL{Path: path.Join("api/v1/user/repos")}
+	response := Repository{}
+	if _, err := c.send(ctx, "POST", &uriRef, payload, &response); err != nil {
+		return nil, fmt.Errorf("failed to create user repository: %w", err)
+	}
+	return &response, nil
+}
+
+func (c *Client) RepositoryGet(ctx context.Context, owner string, repo string) (*Repository, error) {
+	uriRef := url.URL{Path: path.Join("api/v1/repos", owner, repo)}
+	response := Repository{}
+	if _, err := c.send(ctx, "GET", &uriRef, nil, &response); err != nil {
+		return nil, fmt.Errorf("failed to get repository: %w", err)
+	}
+	return &response, nil
+}
+
+func (c *Client) RepositoryDelete(ctx context.Context, owner string, repo string) error {
+	uriRef := url.URL{Path: path.Join("api/v1/repos", owner, repo)}
+	if _, err := c.send(ctx, "DELETE", &uriRef, nil, nil); err != nil {
+		return fmt.Errorf("failed to delete repository: %w", err)
+	}
+	return nil
+}
+
 func (c *Client) RepositoriesList(ctx context.Context) ([]Repository, error) {
 	type Response struct {
 		Data []Repository `json:"data"`
@@ -127,4 +216,13 @@ func (c *Client) RepositoriesList(ctx context.Context) ([]Repository, error) {
 		}
 		page++
 	}
+}
+
+func (c *Client) RepositoryUpdate(ctx context.Context, owner string, repo string, payload *RepositoryUpdateRequest) (*Repository, error) {
+	uriRef := url.URL{Path: path.Join("api/v1/repos", owner, repo)}
+	response := Repository{}
+	if _, err := c.send(ctx, "PATCH", &uriRef, payload, &response); err != nil {
+		return nil, fmt.Errorf("failed to update repository: %w", err)
+	}
+	return &response, nil
 }
