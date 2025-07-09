@@ -3,8 +3,10 @@ package provider
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"git.adyxax.org/adyxax/terraform-provider-forgejo/internal/client"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -16,7 +18,8 @@ type RepositoryActionsVariableResource struct {
 	client *client.Client
 }
 
-var _ resource.Resource = &RepositoryActionsVariableResource{} // Ensure provider defined types fully satisfy framework interfaces
+var _ resource.Resource = &RepositoryActionsVariableResource{}                // Ensure provider defined types fully satisfy framework interfaces
+var _ resource.ResourceWithImportState = &RepositoryActionsVariableResource{} // Ensure provider defined types fully satisfy framework interfaces
 func NewRepositoryActionsVariableResource() resource.Resource {
 	return &RepositoryActionsVariableResource{}
 }
@@ -79,7 +82,7 @@ func (d *RepositoryActionsVariableResource) Create(ctx context.Context, req reso
 		data.Name.ValueString(),
 		data.Data.ValueString())
 	if err != nil {
-		resp.Diagnostics.AddError("CreateRepositoryActionsVariable", fmt.Sprintf("failed to create repository actions variable: %s", err))
+		resp.Diagnostics.AddError("CreateRepositoryActionsVariable", fmt.Sprintf("failed to create repository actions variable: %s\nTry importing the resource instead?", err))
 		return
 	}
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -100,6 +103,20 @@ func (d *RepositoryActionsVariableResource) Delete(ctx context.Context, req reso
 		resp.Diagnostics.AddError("DeleteRepositoryActionsVariable", fmt.Sprintf("failed to delete repository actions variable: %s", err))
 		return
 	}
+}
+
+func (r *RepositoryActionsVariableResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	idParts := strings.Split(req.ID, "/")
+	if len(idParts) != 3 || idParts[0] == "" || idParts[1] == "" || idParts[2] == "" {
+		resp.Diagnostics.AddError(
+			"Unexpected Import Identifier",
+			fmt.Sprintf("Expected import identifier with format: owner/repository/variableName. Got: %q", req.ID),
+		)
+		return
+	}
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("owner"), idParts[0])...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("repository"), idParts[1])...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("name"), idParts[2])...)
 }
 
 func (d *RepositoryActionsVariableResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {

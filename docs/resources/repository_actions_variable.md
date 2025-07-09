@@ -30,3 +30,11 @@ resource "forgejo_repository_actions_variable" "main" {
 - `name` (String) The variable's name. It must be uppercase or the plan will not be idempotent.
 - `owner` (String) The variable's owner.
 - `repository` (String) The variable's repository.
+
+## Import
+
+Import is supported using the following syntax:
+
+```shell
+terraform import forgejo_repository_actions_variable.main <owner>/<repository_name>/<variable_name>
+```
