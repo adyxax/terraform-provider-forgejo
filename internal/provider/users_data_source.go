@@ -53,7 +53,7 @@ func (d *UsersDataSource) Metadata(ctx context.Context, req datasource.MetadataR
 	resp.TypeName = req.ProviderTypeName + "_users"
 }
 
-var userSchemaAttributes = map[string]schema.Attribute{
+var userDataSourceSchemaAttributes = map[string]schema.Attribute{
 	"active": schema.BoolAttribute{
 		Computed:            true,
 		MarkdownDescription: "Whether the user is active or not.",
@@ -157,7 +157,7 @@ func (d *UsersDataSource) Schema(ctx context.Context, req datasource.SchemaReque
 				Computed:            true,
 				MarkdownDescription: "The list of users.",
 				NestedObject: schema.NestedAttributeObject{
-					Attributes: userSchemaAttributes,
+					Attributes: userDataSourceSchemaAttributes,
 				},
 			},
 		},

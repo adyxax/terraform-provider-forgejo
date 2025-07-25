@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"path"
 	"strconv"
 	"time"
 )
@@ -100,6 +101,55 @@ type Repository struct {
 	WikiBranch                    string                     `json:"wiki_branch"`
 }
 
+type RepositoryCreateRequest struct {
+	DefaultBranch string `json:"default_branch"`
+	Description   string `json:"description,omitempty"`
+	Name          string `json:"name"`
+	Private       bool   `json:"private"`
+}
+
+type RepositoryUpdateRequest struct {
+	DefaultBranch string `json:"default_branch"`
+	Description   string `json:"description,omitempty"`
+	Name          string `json:"name"`
+	Private       bool   `json:"private"`
+}
+
+func (c *Client) OrganizationRepositoryCreate(ctx context.Context, owner string, payload *RepositoryCreateRequest) (*Repository, error) {
+	uriRef := url.URL{Path: path.Join("api/v1/orgs", owner, "repos")}
+	response := Repository{}
+	if _, err := c.send(ctx, "POST", &uriRef, payload, &response); err != nil {
+		return nil, fmt.Errorf("failed to create organization repository: %w", err)
+	}
+	return &response, nil
+}
+
+func (c *Client) UserRepositoryCreate(ctx context.Context, payload *RepositoryCreateRequest) (*Repository, error) {
+	uriRef := url.URL{Path: path.Join("api/v1/user/repos")}
+	response := Repository{}
+	if _, err := c.send(ctx, "POST", &uriRef, payload, &response); err != nil {
+		return nil, fmt.Errorf("failed to create user repository: %w", err)
+	}
+	return &response, nil
+}
+
+func (c *Client) RepositoryGet(ctx context.Context, owner string, repo string) (*Repository, error) {
+	uriRef := url.URL{Path: path.Join("api/v1/repos", owner, repo)}
+	response := Repository{}
+	if _, err := c.send(ctx, "GET", &uriRef, nil, &response); err != nil {
+		return nil, fmt.Errorf("failed to get repository: %w", err)
+	}
+	return &response, nil
+}
+
+func (c *Client) RepositoryDelete(ctx context.Context, owner string, repo string) error {
+	uriRef := url.URL{Path: path.Join("api/v1/repos", owner, repo)}
+	if _, err := c.send(ctx, "DELETE", &uriRef, nil, nil); err != nil {
+		return fmt.Errorf("failed to delete repository: %w", err)
+	}
+	return nil
+}
+
 func (c *Client) RepositoriesList(ctx context.Context) ([]Repository, error) {
 	type Response struct {
 		Data []Repository `json:"data"`
@@ -127,4 +177,13 @@ func (c *Client) RepositoriesList(ctx context.Context) ([]Repository, error) {
 		}
 		page++
 	}
+}
+
+func (c *Client) RepositoryUpdate(ctx context.Context, owner string, repo string, payload *RepositoryUpdateRequest) (*Repository, error) {
+	uriRef := url.URL{Path: path.Join("api/v1/repos", owner, repo)}
+	response := Repository{}
+	if _, err := c.send(ctx, "PATCH", &uriRef, payload, &response); err != nil {
+		return nil, fmt.Errorf("failed to update repository: %w", err)
+	}
+	return &response, nil
 }

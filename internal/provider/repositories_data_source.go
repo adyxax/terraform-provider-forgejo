@@ -363,7 +363,7 @@ func (d *RepositoriesDataSource) Schema(ctx context.Context, req datasource.Sche
 							MarkdownDescription: "The original URL.",
 						},
 						"owner": schema.SingleNestedAttribute{
-							Attributes: userSchemaAttributes,
+							Attributes: userDataSourceSchemaAttributes,
 							Computed:   true,
 						},
 						//"parent"
@@ -386,11 +386,11 @@ func (d *RepositoriesDataSource) Schema(ctx context.Context, req datasource.Sche
 									MarkdownDescription: "A description string.",
 								},
 								"doer": schema.SingleNestedAttribute{
-									Attributes: userSchemaAttributes,
+									Attributes: userDataSourceSchemaAttributes,
 									Computed:   true,
 								},
 								"recipient": schema.SingleNestedAttribute{
-									Attributes: userSchemaAttributes,
+									Attributes: userDataSourceSchemaAttributes,
 									Computed:   true,
 								},
 								"teams": teamSchemaAttributes,
