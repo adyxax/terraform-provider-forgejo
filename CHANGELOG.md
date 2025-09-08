@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.2.3 - unreleased
+
+### Changed
+
+- Fix using the proper context during client initialization.
+
 ## 1.2.2 - 2025-09-03
 
 ### Changed

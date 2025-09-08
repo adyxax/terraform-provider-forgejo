@@ -20,7 +20,7 @@ type Client struct {
 	maxItemsPerPageStr string
 }
 
-func NewClient(baseURL *url.URL, apiToken string) (*Client, error) {
+func NewClient(ctx context.Context, baseURL *url.URL, apiToken string) (*Client, error) {
 	c := Client{
 		baseURI: baseURL,
 		headers: &http.Header{
@@ -32,7 +32,7 @@ func NewClient(baseURL *url.URL, apiToken string) (*Client, error) {
 			Timeout: time.Minute,
 		},
 	}
-	settings, err := c.settingsApiGet()
+	settings, err := c.settingsApiGet(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get settings api: %w", err)
 	}

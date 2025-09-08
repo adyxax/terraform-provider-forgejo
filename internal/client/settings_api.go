@@ -13,10 +13,10 @@ type SettingsApi struct {
 	DefaultMaxBlobSize     int `json:"default_max_blob_size"`
 }
 
-func (c *Client) settingsApiGet() (*SettingsApi, error) {
+func (c *Client) settingsApiGet(ctx context.Context) (*SettingsApi, error) {
 	uriRef := url.URL{Path: "api/v1/settings/api"}
 	response := SettingsApi{}
-	if _, err := c.send(context.Background(), "GET", &uriRef, nil, &response); err != nil {
+	if _, err := c.send(ctx, "GET", &uriRef, nil, &response); err != nil {
 		return nil, fmt.Errorf("failed to get settings api: %w", err)
 	}
 	return &response, nil
