@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file.
 
 - Fixed importing user repositories.
 - Fixed using the proper context during client initialization.
+- Updated dependencies.
 
 ## 1.2.2 - 2025-09-03
 
