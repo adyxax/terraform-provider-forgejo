@@ -2,11 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
-## 1.2.3 - unreleased
+## 1.2.3 - 2025-09-09
 
 ### Changed
 
-- Fix using the proper context during client initialization.
+- Fixed importing user repositories.
+- Fixed using the proper context during client initialization.
 
 ## 1.2.2 - 2025-09-03
 

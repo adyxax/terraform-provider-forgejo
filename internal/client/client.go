@@ -13,6 +13,7 @@ import (
 )
 
 type Client struct {
+	authenticatedUser  string
 	baseURI            *url.URL
 	headers            *http.Header
 	httpClient         *http.Client
@@ -38,7 +39,16 @@ func NewClient(ctx context.Context, baseURL *url.URL, apiToken string) (*Client,
 	}
 	c.maxItemsPerPage = settings.MaxResponseItems
 	c.maxItemsPerPageStr = strconv.Itoa(c.maxItemsPerPage)
+	user, err := c.authenticatedUserGet(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get authenticated user: %s", err)
+	}
+	c.authenticatedUser = user.Login
 	return &c, nil
+}
+
+func (c *Client) AuthenticatedUser() string {
+	return c.authenticatedUser
 }
 
 func (c *Client) sendPaginated(ctx context.Context, method string, uriRef *url.URL, payload any, response any) error {

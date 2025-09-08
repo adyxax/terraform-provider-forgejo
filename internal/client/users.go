@@ -34,6 +34,15 @@ type User struct {
 	Website          string    `json:"website"`
 }
 
+func (c *Client) authenticatedUserGet(ctx context.Context) (*User, error) {
+	uriRef := url.URL{Path: "api/v1/user"}
+	var response User
+	if _, err := c.send(ctx, "GET", &uriRef, nil, &response); err != nil {
+		return nil, fmt.Errorf("failed to get repository: %w", err)
+	}
+	return &response, nil
+}
+
 func (c *Client) UsersList(ctx context.Context) ([]User, error) {
 	type Response struct {
 		Data []User `json:"data"`

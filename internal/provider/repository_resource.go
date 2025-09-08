@@ -69,6 +69,7 @@ func (d *RepositoryResource) Schema(ctx context.Context, req resource.SchemaRequ
 				Optional:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"private": schema.BoolAttribute{
@@ -142,15 +143,18 @@ func (d *RepositoryResource) Delete(ctx context.Context, req resource.DeleteRequ
 
 func (r *RepositoryResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	idParts := strings.Split(req.ID, "/")
-	if len(idParts) != 2 || idParts[0] == "" || idParts[1] == "" {
+	if len(idParts) == 1 && idParts[0] != "" {
+		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("owner"), r.client.AuthenticatedUser())...)
+		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("name"), idParts[0])...)
+	} else if len(idParts) == 2 && idParts[0] != "" && idParts[1] != "" {
+		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("owner"), idParts[0])...)
+		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("name"), idParts[1])...)
+	} else {
 		resp.Diagnostics.AddError(
 			"Unexpected Import Identifier",
-			fmt.Sprintf("Expected import identifier with format: owner/repository. Got: %q", req.ID),
+			fmt.Sprintf("Expected import identifier with either format <repository> or format <owner>/<repository>. Got: %q", req.ID),
 		)
-		return
 	}
-	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("owner"), idParts[0])...)
-	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("name"), idParts[1])...)
 }
 
 func (d *RepositoryResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -159,9 +163,13 @@ func (d *RepositoryResource) Read(ctx context.Context, req resource.ReadRequest,
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	owner := data.Owner.ValueString()
+	if owner == "" {
+		owner = d.client.AuthenticatedUser()
+	}
 	repository, err := d.client.RepositoryGet(
 		ctx,
-		data.Owner.ValueString(),
+		owner,
 		data.Name.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("ReadRepository", fmt.Sprintf("failed to get Repository: %s", err))
