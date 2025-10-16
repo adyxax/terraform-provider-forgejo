@@ -1,6 +1,6 @@
 module git.adyxax.org/adyxax/terraform-provider-forgejo
 
-go 1.24.8
+go 1.24.9
 
 require (
 	github.com/hashicorp/terraform-plugin-docs v0.21.0
