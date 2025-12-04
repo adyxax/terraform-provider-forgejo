@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.2.7 - 2025-12-05
+
+### Changed
+
+- Updated dependencies.
+
 ## 1.2.6 - 2025-11-23
 
 ### Changed
