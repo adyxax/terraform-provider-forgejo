@@ -22,18 +22,6 @@ func NewOrganizationsDataSource() datasource.DataSource {
 type OrganizationsDataSourceModel struct {
 	Elements []OrganizationDataSourceModel `tfsdk:"elements"`
 }
-type OrganizationDataSourceModel struct {
-	AvatarUrl                 types.String `tfsdk:"avatar_url"`
-	Description               types.String `tfsdk:"description"`
-	Email                     types.String `tfsdk:"email"`
-	FullName                  types.String `tfsdk:"full_name"`
-	Id                        types.Int64  `tfsdk:"id"`
-	Location                  types.String `tfsdk:"location"`
-	Name                      types.String `tfsdk:"name"`
-	RepoAdminChangeTeamAccess types.Bool   `tfsdk:"repo_admin_change_team_access"`
-	Visibility                types.String `tfsdk:"visibility"`
-	Website                   types.String `tfsdk:"website"`
-}
 
 func (d *OrganizationsDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_organizations"
@@ -107,7 +95,7 @@ func (d *OrganizationsDataSource) Read(ctx context.Context, req datasource.ReadR
 	}
 	organizations, err := d.client.OrganizationsList(ctx)
 	if err != nil {
-		resp.Diagnostics.AddError("ListOrganizations", fmt.Sprintf("failed to list organizations: %s", err))
+		resp.Diagnostics.AddError("OrganizationsList", fmt.Sprintf("failed to list organizations: %s", err))
 		return
 	}
 	organizationList := make([]OrganizationDataSourceModel, len(organizations))
