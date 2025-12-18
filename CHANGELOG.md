@@ -2,11 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
-## 1.3.0 - unreleased
+## 1.3.0 - 2025-12-18
 
 ### Added
 
 - Added organization datasource.
+- Added organization resource.
 
 ## 1.2.7 - 2025-12-05
 

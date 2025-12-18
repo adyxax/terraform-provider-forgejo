@@ -90,6 +90,7 @@ func (p *Provider) Resources(ctx context.Context) []func() resource.Resource {
 		NewRepositoryActionsSecretResource,
 		NewRepositoryActionsVariableResource,
 		NewRepositoryLabelResource,
+		NewOrganizationResource,
 		NewRepositoryPushMirrorResource,
 		NewRepositoryResource,
 	}
