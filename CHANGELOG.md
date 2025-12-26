@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## 1.3.1 - unreleased
 
+### Changed
+
+- Updated dependencies.
+
 ### Fixed
 
 - Fixed the documentation string for the name attribute of the forgejo_teams datasource.
