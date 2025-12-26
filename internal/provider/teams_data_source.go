@@ -65,7 +65,7 @@ var teamSchemaAttributes = schema.ListNestedAttribute{
 			},
 			"name": schema.StringAttribute{
 				Computed:            true,
-				MarkdownDescription: "The team's name are a part of.",
+				MarkdownDescription: "The team's name.",
 			},
 			"permission": schema.StringAttribute{
 				Computed:            true,

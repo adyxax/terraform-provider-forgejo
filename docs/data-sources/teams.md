@@ -44,7 +44,7 @@ Read-Only:
 - `description` (String) A description string.
 - `id` (Number) The identifier of the team.
 - `includes_all_repositories` (Boolean) Whether members of this team can access all the repositories that belong to the organization.
-- `name` (String) The team's name are a part of.
+- `name` (String) The team's name.
 - `permission` (String) The members' permission level on the organization.
 - `units` (List of String) The list of units permissions.
 - `units_map` (Map of String) The map of units permissions and their level.
