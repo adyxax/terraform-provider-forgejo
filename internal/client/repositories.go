@@ -29,10 +29,10 @@ type RepositoryInternalTracker struct {
 }
 
 type RepositoryTransfer struct {
-	Description string             `json:"description"`
-	Doer        *User              `json:"doer"`
-	Recipient   *User              `json:"recipient"`
-	Teams       []OrganizationTeam `json:"teams"`
+	Description string `json:"description"`
+	Doer        *User  `json:"doer"`
+	Recipient   *User  `json:"recipient"`
+	Teams       []Team `json:"teams"`
 }
 
 type Repository struct {
