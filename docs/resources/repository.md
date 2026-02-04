@@ -38,6 +38,13 @@ resource "forgejo_repository" "organization_example" {
 
 - `default_branch` (String) Name of the default branch. Defaults to "main".
 - `description` (String) A description string.
+- `has_actions` (Boolean) If true, the actions unit will be enabled. If false, the actions unit will be disabled. If unset, the server default will be left as is.
+- `has_issues` (Boolean) If true, the issues unit will be enabled. If false, the issues unit will be disabled. If unset, the server default will be left as is.
+- `has_packages` (Boolean) If true, the packages unit will be enabled. If false, the packages unit will be disabled. If unset, the server default will be left as is.
+- `has_projects` (Boolean) If true, the projects unit will be enabled. If false, the projects unit will be disabled. If unset, the server default will be left as is.
+- `has_pull_requests` (Boolean) If true, the pull requests unit will be enabled. If false, the pull requests unit will be disabled. If unset, the server default will be left as is.
+- `has_releases` (Boolean) If true, the releases unit will be enabled. If false, the releases unit will be disabled. If unset, the server default will be left as is.
+- `has_wiki` (Boolean) If true, the wiki unit will be enabled. If false, the wiki unit will be disabled. If unset, the server default will be left as is.
 - `owner` (String) The name of the organization owning this repository. A null value here means this is a repository belonging to the user whose credentials the provider was instantiated with. Defaults to null.
 - `private` (Boolean) If true, the repository is private. Defaults to true.
 

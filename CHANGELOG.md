@@ -2,7 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
-## 1.4.2 - 2026-02-05
+## 1.5.0 - 2026-02-05
+
+### Added
+
+- Added the following new attributes to the repository resource: `has_actions`,
+  `has_issues`, `has_packages`, `has_projects`, `has_pull_requests`,
+  `has_releases`, `has_wiki`.
 
 ### Changed
 

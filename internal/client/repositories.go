@@ -109,10 +109,17 @@ type RepositoryCreateRequest struct {
 }
 
 type RepositoryUpdateRequest struct {
-	DefaultBranch string `json:"default_branch"`
-	Description   string `json:"description,omitempty"`
-	Name          string `json:"name"`
-	Private       bool   `json:"private"`
+	DefaultBranch   string `json:"default_branch"`
+	Description     string `json:"description,omitempty"`
+	HasActions      *bool  `json:"has_actions,omitempty"`
+	HasIssues       *bool  `json:"has_issues,omitempty"`
+	HasPackages     *bool  `json:"has_packages,omitempty"`
+	HasProjects     *bool  `json:"has_projects,omitempty"`
+	HasPullRequests *bool  `json:"has_pull_requests,omitempty"`
+	HasReleases     *bool  `json:"has_releases,omitempty"`
+	HasWiki         *bool  `json:"has_wiki,omitempty"`
+	Name            string `json:"name"`
+	Private         bool   `json:"private"`
 }
 
 func (c *Client) OrganizationRepositoryCreate(ctx context.Context, owner string, payload *RepositoryCreateRequest) (*Repository, error) {

@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -28,12 +29,19 @@ func NewRepositoryResource() resource.Resource {
 }
 
 type RepositoryResourceModel struct {
-	CreatedAt     timetypes.RFC3339 `tfsdk:"created_at"`
-	DefaultBranch types.String      `tfsdk:"default_branch"`
-	Description   types.String      `tfsdk:"description"`
-	Name          types.String      `tfsdk:"name"`
-	Owner         types.String      `tfsdk:"owner"`
-	Private       types.Bool        `tfsdk:"private"`
+	CreatedAt       timetypes.RFC3339 `tfsdk:"created_at"`
+	DefaultBranch   types.String      `tfsdk:"default_branch"`
+	Description     types.String      `tfsdk:"description"`
+	HasActions      types.Bool        `tfsdk:"has_actions"`
+	HasIssues       types.Bool        `tfsdk:"has_issues"`
+	HasPackages     types.Bool        `tfsdk:"has_packages"`
+	HasProjects     types.Bool        `tfsdk:"has_projects"`
+	HasPullRequests types.Bool        `tfsdk:"has_pull_requests"`
+	HasReleases     types.Bool        `tfsdk:"has_releases"`
+	HasWiki         types.Bool        `tfsdk:"has_wiki"`
+	Name            types.String      `tfsdk:"name"`
+	Owner           types.String      `tfsdk:"owner"`
+	Private         types.Bool        `tfsdk:"private"`
 }
 
 func (d *RepositoryResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -58,6 +66,65 @@ func (d *RepositoryResource) Schema(ctx context.Context, req resource.SchemaRequ
 				Computed:            true,
 				MarkdownDescription: "A description string.",
 				Optional:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"has_actions": schema.BoolAttribute{
+				Computed:            true,
+				MarkdownDescription: "If true, the actions unit will be enabled. If false, the actions unit will be disabled. If unset, the server default will be left as is.",
+				Optional:            true,
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"has_issues": schema.BoolAttribute{
+				Computed:            true,
+				MarkdownDescription: "If true, the issues unit will be enabled. If false, the issues unit will be disabled. If unset, the server default will be left as is.",
+				Optional:            true,
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"has_packages": schema.BoolAttribute{
+				Computed:            true,
+				MarkdownDescription: "If true, the packages unit will be enabled. If false, the packages unit will be disabled. If unset, the server default will be left as is.",
+				Optional:            true,
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"has_projects": schema.BoolAttribute{
+				Computed:            true,
+				MarkdownDescription: "If true, the projects unit will be enabled. If false, the projects unit will be disabled. If unset, the server default will be left as is.",
+				Optional:            true,
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"has_pull_requests": schema.BoolAttribute{
+				Computed:            true,
+				MarkdownDescription: "If true, the pull requests unit will be enabled. If false, the pull requests unit will be disabled. If unset, the server default will be left as is.",
+				Optional:            true,
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"has_releases": schema.BoolAttribute{
+				Computed:            true,
+				MarkdownDescription: "If true, the releases unit will be enabled. If false, the releases unit will be disabled. If unset, the server default will be left as is.",
+				Optional:            true,
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"has_wiki": schema.BoolAttribute{
+				Computed:            true,
+				MarkdownDescription: "If true, the wiki unit will be enabled. If false, the wiki unit will be disabled. If unset, the server default will be left as is.",
+				Optional:            true,
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"name": schema.StringAttribute{
 				MarkdownDescription: "The name of the repository.",
@@ -114,13 +181,53 @@ func (d *RepositoryResource) Create(ctx context.Context, req resource.CreateRequ
 			&request)
 	}
 	if err != nil {
-		resp.Diagnostics.AddError("CreateRepository", fmt.Sprintf("failed to create Repository: %s", err))
+		resp.Diagnostics.AddError("CreateRepository", fmt.Sprintf("failed to create repository: %s", err))
+		return
+	}
+	updateRequest := client.RepositoryUpdateRequest{
+		DefaultBranch: data.DefaultBranch.ValueString(),
+		Name:          data.Name.ValueString(),
+		Private:       data.Private.ValueBool(),
+	}
+	if !data.HasActions.IsUnknown() {
+		updateRequest.HasActions = data.HasActions.ValueBoolPointer()
+	}
+	if !data.HasIssues.IsUnknown() {
+		updateRequest.HasIssues = data.HasIssues.ValueBoolPointer()
+	}
+	if !data.HasPackages.IsUnknown() {
+		updateRequest.HasPackages = data.HasPackages.ValueBoolPointer()
+	}
+	if !data.HasProjects.IsUnknown() {
+		updateRequest.HasProjects = data.HasProjects.ValueBoolPointer()
+	}
+	if !data.HasPullRequests.IsUnknown() {
+		updateRequest.HasPullRequests = data.HasPullRequests.ValueBoolPointer()
+	}
+	if !data.HasReleases.IsUnknown() {
+		updateRequest.HasReleases = data.HasReleases.ValueBoolPointer()
+	}
+	if !data.HasWiki.IsUnknown() {
+		updateRequest.HasWiki = data.HasWiki.ValueBoolPointer()
+	}
+	repository, err = d.client.RepositoryUpdate(
+		ctx,
+		repository.Owner.Login,
+		data.Name.ValueString(),
+		&updateRequest)
+	if err != nil {
+		resp.Diagnostics.AddError("CreateRepository", fmt.Sprintf("failed to update repository: %s", err))
 		return
 	}
 	data.CreatedAt = timetypes.NewRFC3339TimeValue(repository.CreatedAt)
-	if data.Description.IsUnknown() {
-		data.Description = types.StringValue(repository.Description)
-	}
+	data.Description = types.StringValue(repository.Description)
+	data.HasActions = types.BoolValue(repository.HasActions)
+	data.HasIssues = types.BoolValue(repository.HasIssues)
+	data.HasPackages = types.BoolValue(repository.HasPackages)
+	data.HasProjects = types.BoolValue(repository.HasProjects)
+	data.HasPullRequests = types.BoolValue(repository.HasPullRequests)
+	data.HasReleases = types.BoolValue(repository.HasReleases)
+	data.HasWiki = types.BoolValue(repository.HasWiki)
 	data.Owner = types.StringValue(repository.Owner.Login)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -178,6 +285,13 @@ func (d *RepositoryResource) Read(ctx context.Context, req resource.ReadRequest,
 	data.CreatedAt = timetypes.NewRFC3339TimeValue(repository.CreatedAt)
 	data.DefaultBranch = types.StringValue(repository.DefaultBranch)
 	data.Description = types.StringValue(repository.Description)
+	data.HasActions = types.BoolValue(repository.HasActions)
+	data.HasIssues = types.BoolValue(repository.HasIssues)
+	data.HasPackages = types.BoolValue(repository.HasPackages)
+	data.HasProjects = types.BoolValue(repository.HasProjects)
+	data.HasPullRequests = types.BoolValue(repository.HasPullRequests)
+	data.HasReleases = types.BoolValue(repository.HasReleases)
+	data.HasWiki = types.BoolValue(repository.HasWiki)
 	data.Owner = types.StringValue(repository.Owner.Login)
 	data.Private = types.BoolValue(repository.Private)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -198,6 +312,27 @@ func (d *RepositoryResource) Update(ctx context.Context, req resource.UpdateRequ
 	}
 	if !plannedData.Description.IsUnknown() {
 		request.Description = plannedData.Description.ValueString()
+	}
+	if !plannedData.HasActions.IsUnknown() {
+		request.HasActions = plannedData.HasActions.ValueBoolPointer()
+	}
+	if !plannedData.HasIssues.IsUnknown() {
+		request.HasIssues = plannedData.HasIssues.ValueBoolPointer()
+	}
+	if !plannedData.HasPackages.IsUnknown() {
+		request.HasPackages = plannedData.HasPackages.ValueBoolPointer()
+	}
+	if !plannedData.HasProjects.IsUnknown() {
+		request.HasProjects = plannedData.HasProjects.ValueBoolPointer()
+	}
+	if !plannedData.HasPullRequests.IsUnknown() {
+		request.HasPullRequests = plannedData.HasPullRequests.ValueBoolPointer()
+	}
+	if !plannedData.HasReleases.IsUnknown() {
+		request.HasReleases = plannedData.HasReleases.ValueBoolPointer()
+	}
+	if !plannedData.HasWiki.IsUnknown() {
+		request.HasWiki = plannedData.HasWiki.ValueBoolPointer()
 	}
 	repository, err := d.client.RepositoryUpdate(
 		ctx,
