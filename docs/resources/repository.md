@@ -56,6 +56,8 @@ resource "forgejo_repository" "organization_example" {
 
 Import is supported using the following syntax:
 
+The [`terraform import` command](https://developer.hashicorp.com/terraform/cli/commands/import) can be used, for example:
+
 ```shell
 # Importing a repository belonging to the user whose credentials the provider
 # was instantiated with:
