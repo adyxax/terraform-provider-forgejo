@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.5.9 - unreleased
+
+### Changed
+
+- Updated dependencies.
+
 ## 1.5.8 - 2026-09-02
 
 ### Changed
