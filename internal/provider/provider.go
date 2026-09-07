@@ -94,6 +94,7 @@ func (p *Provider) Resources(ctx context.Context) []func() resource.Resource {
 		NewRepositoryPushMirrorResource,
 		NewRepositoryResource,
 		NewTeamResource,
+		NewUserResource,
 	}
 }
 

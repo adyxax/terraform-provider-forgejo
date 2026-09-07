@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## 1.5.9 - unreleased
 
+### Added
+
+- Added user resource.
+
 ### Changed
 
 - Updated dependencies.
