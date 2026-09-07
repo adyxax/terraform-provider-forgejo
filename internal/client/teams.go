@@ -22,7 +22,7 @@ type Team struct {
 
 type TeamRequest struct {
 	CanCreateOrgRepo        bool              `json:"can_create_org_repo"`
-	Description             string            `json:"description,omitempty"`
+	Description             *string           `json:"description,omitempty"`
 	IncludesAllRepositories bool              `json:"includes_all_repositories"`
 	Name                    string            `json:"name"`
 	Permission              string            `json:"permission"`

@@ -27,13 +27,13 @@ resource "forgejo_organization" "main" {
 
 ### Optional
 
-- `description` (String) A description string.
-- `email` (String) The organization's email address.
-- `full_name` (String) The organization's full name.
-- `location` (String) The organization's advertised location.
+- `description` (String) A description string. If unset, the server value will be left as is.
+- `email` (String) The organization's email address. If unset, the server value will be left as is.
+- `full_name` (String) The organization's full name. If unset, the server value will be left as is.
+- `location` (String) The organization's advertised location. If unset, the server value will be left as is.
 - `repo_admin_change_team_access` (Boolean) Whether an admin of a repository that belongs to this organization can change team access or not. Defaults to true.
-- `visibility` (String) The organization's visibility option: `limited`, `private`, `public`. Defaults to `private`.
-- `website` (String) The organization's advertised website.
+- `visibility` (String) The organization's visibility option: `limited`, `private`, `public`. Defaults to `private`. Because of a forgejo API limitation, switching an existing organization to `public` requires administrator credentials.
+- `website` (String) The organization's advertised website. If unset, the server value will be left as is.
 
 ### Read-Only
 

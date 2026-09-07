@@ -32,7 +32,7 @@ resource "forgejo_team" "main" {
 ### Optional
 
 - `can_create_org_repo` (Boolean) Whether members of this team can create repositories that will belong to the organization. Defaults to false.
-- `description` (String) A description string.
+- `description` (String) A description string. If unset, the server value will be left as is.
 - `includes_all_repositories` (Boolean) Whether members of this team can access all the repositories that belong to the organization. Defaults to false.
 
 ### Read-Only

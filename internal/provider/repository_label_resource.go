@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -58,6 +59,9 @@ func (d *RepositoryLabelResource) Schema(ctx context.Context, req resource.Schem
 			"id": schema.Int64Attribute{
 				Computed:            true,
 				MarkdownDescription: "The identifier of the repository label.",
+				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.UseStateForUnknown(),
+				},
 			},
 			"is_archived": schema.BoolAttribute{
 				Computed:            true,
@@ -86,6 +90,9 @@ func (d *RepositoryLabelResource) Schema(ctx context.Context, req resource.Schem
 			"url": schema.StringAttribute{
 				Computed:            true,
 				MarkdownDescription: "The repository label's URL.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 		},
 		MarkdownDescription: "Use this resource to create and manage a repository label.",

@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -46,27 +47,42 @@ func (d *OrganizationResource) Schema(ctx context.Context, req resource.SchemaRe
 		Attributes: map[string]schema.Attribute{
 			"description": schema.StringAttribute{
 				Computed:            true,
-				MarkdownDescription: "A description string.",
+				MarkdownDescription: "A description string. If unset, the server value will be left as is.",
 				Optional:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"email": schema.StringAttribute{
 				Computed:            true,
-				MarkdownDescription: "The organization's email address.",
+				MarkdownDescription: "The organization's email address. If unset, the server value will be left as is.",
 				Optional:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"full_name": schema.StringAttribute{
 				Computed:            true,
-				MarkdownDescription: "The organization's full name.",
+				MarkdownDescription: "The organization's full name. If unset, the server value will be left as is.",
 				Optional:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"id": schema.Int64Attribute{
 				Computed:            true,
 				MarkdownDescription: "The identifier of the organization.",
+				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.UseStateForUnknown(),
+				},
 			},
 			"location": schema.StringAttribute{
 				Computed:            true,
-				MarkdownDescription: "The organization's advertised location.",
+				MarkdownDescription: "The organization's advertised location. If unset, the server value will be left as is.",
 				Optional:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"name": schema.StringAttribute{
 				MarkdownDescription: "The name of the organization.",
@@ -84,13 +100,16 @@ func (d *OrganizationResource) Schema(ctx context.Context, req resource.SchemaRe
 			"visibility": schema.StringAttribute{
 				Computed:            true,
 				Default:             stringdefault.StaticString("private"),
-				MarkdownDescription: "The organization's visibility option: `limited`, `private`, `public`. Defaults to `private`.",
+				MarkdownDescription: "The organization's visibility option: `limited`, `private`, `public`. Defaults to `private`. Because of a forgejo API limitation, switching an existing organization to `public` requires administrator credentials.",
 				Optional:            true,
 			},
 			"website": schema.StringAttribute{
 				Computed:            true,
-				MarkdownDescription: "The organization's advertised website.",
+				MarkdownDescription: "The organization's advertised website. If unset, the server value will be left as is.",
 				Optional:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 		},
 		MarkdownDescription: "Use this resource to create and manage an organization.",
@@ -108,26 +127,14 @@ func (d *OrganizationResource) Create(ctx context.Context, req resource.CreateRe
 		return
 	}
 	request := client.OrganizationCreateRequest{
-		RepoAdminChangeTeamAccess: data.RepoAdminChangeTeamAccess.ValueBool(),
+		Description:               stringPointerIfKnown(data.Description),
+		Email:                     stringPointerIfKnown(data.Email),
+		FullName:                  stringPointerIfKnown(data.FullName),
+		Location:                  stringPointerIfKnown(data.Location),
+		RepoAdminChangeTeamAccess: boolPointerIfKnown(data.RepoAdminChangeTeamAccess),
 		Username:                  data.Name.ValueString(),
-	}
-	if !data.Description.IsUnknown() {
-		request.Description = data.Description.ValueString()
-	}
-	if !data.Email.IsUnknown() {
-		request.Email = data.Email.ValueString()
-	}
-	if !data.FullName.IsUnknown() {
-		request.FullName = data.FullName.ValueString()
-	}
-	if !data.Location.IsUnknown() {
-		request.Location = data.Location.ValueString()
-	}
-	if !data.Visibility.IsUnknown() {
-		request.Visibility = data.Visibility.ValueString()
-	}
-	if !data.Website.IsUnknown() {
-		request.Website = data.Website.ValueString()
+		Visibility:                data.Visibility.ValueString(),
+		Website:                   stringPointerIfKnown(data.Website),
 	}
 	organization, err := d.client.OrganizationCreate(
 		ctx,
@@ -199,25 +206,13 @@ func (d *OrganizationResource) Update(ctx context.Context, req resource.UpdateRe
 		return
 	}
 	request := client.OrganizationPatchRequest{
-		RepoAdminChangeTeamAccess: plannedData.RepoAdminChangeTeamAccess.ValueBool(),
-	}
-	if !plannedData.Description.IsUnknown() {
-		request.Description = plannedData.Description.ValueString()
-	}
-	if !plannedData.Email.IsUnknown() {
-		request.Email = plannedData.Email.ValueString()
-	}
-	if !plannedData.FullName.IsUnknown() {
-		request.FullName = plannedData.FullName.ValueString()
-	}
-	if !plannedData.Location.IsUnknown() {
-		request.Location = plannedData.Location.ValueString()
-	}
-	if !plannedData.Visibility.IsUnknown() {
-		request.Visibility = plannedData.Visibility.ValueString()
-	}
-	if !plannedData.Website.IsUnknown() {
-		request.Website = plannedData.Website.ValueString()
+		Description:               stringPointerIfKnown(plannedData.Description),
+		Email:                     stringPointerIfKnown(plannedData.Email),
+		FullName:                  stringPointerIfKnown(plannedData.FullName),
+		Location:                  stringPointerIfKnown(plannedData.Location),
+		RepoAdminChangeTeamAccess: boolPointerIfKnown(plannedData.RepoAdminChangeTeamAccess),
+		Visibility:                plannedData.Visibility.ValueString(),
+		Website:                   stringPointerIfKnown(plannedData.Website),
 	}
 	organization, err := d.client.OrganizationUpdate(
 		ctx,

@@ -42,6 +42,9 @@ func (d *RepositoryActionsSecretResource) Schema(ctx context.Context, req resour
 				Computed:            true,
 				CustomType:          timetypes.RFC3339Type{},
 				MarkdownDescription: "The secret's creation date and time.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"data": schema.StringAttribute{
 				MarkdownDescription: "The secret's data.",
@@ -183,6 +186,6 @@ func (d *RepositoryActionsSecretResource) Update(ctx context.Context, req resour
 		resp.Diagnostics.AddError("UpdateRepositoryActionsSecret", err.Error())
 		return
 	}
-	data.CreatedAt = secret.CreatedAt
+	data.CreatedAt = knownOr(data.CreatedAt, secret.CreatedAt)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }

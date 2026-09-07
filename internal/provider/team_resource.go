@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -52,12 +53,18 @@ func (d *TeamResource) Schema(ctx context.Context, req resource.SchemaRequest, r
 			},
 			"description": schema.StringAttribute{
 				Computed:            true,
-				MarkdownDescription: "A description string.",
+				MarkdownDescription: "A description string. If unset, the server value will be left as is.",
 				Optional:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"id": schema.Int64Attribute{
 				Computed:            true,
 				MarkdownDescription: "The identifier of the team.",
+				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.UseStateForUnknown(),
+				},
 			},
 			"includes_all_repositories": schema.BoolAttribute{
 				Computed:            true,
@@ -100,12 +107,10 @@ func (d *TeamResource) Create(ctx context.Context, req resource.CreateRequest, r
 	}
 	request := client.TeamRequest{
 		CanCreateOrgRepo:        data.CanCreateOrgRepo.ValueBool(),
+		Description:             stringPointerIfKnown(data.Description),
 		IncludesAllRepositories: data.IncludesAllRepositories.ValueBool(),
 		Name:                    data.Name.ValueString(),
 		Permission:              data.Permission.ValueString(),
-	}
-	if !data.Description.IsUnknown() {
-		request.Description = data.Description.ValueString()
 	}
 	if data.Permission.ValueString() == "write" {
 		request.Units = []string{
@@ -196,12 +201,10 @@ func (d *TeamResource) Update(ctx context.Context, req resource.UpdateRequest, r
 	}
 	request := client.TeamRequest{
 		CanCreateOrgRepo:        plannedData.CanCreateOrgRepo.ValueBool(),
+		Description:             stringPointerIfKnown(plannedData.Description),
 		IncludesAllRepositories: plannedData.IncludesAllRepositories.ValueBool(),
 		Name:                    plannedData.Name.ValueString(),
 		Permission:              plannedData.Permission.ValueString(),
-	}
-	if !plannedData.Description.IsUnknown() {
-		request.Description = plannedData.Description.ValueString()
 	}
 	if plannedData.Permission.ValueString() != "admin" {
 		request.Units = []string{
@@ -225,12 +228,12 @@ func (d *TeamResource) Update(ctx context.Context, req resource.UpdateRequest, r
 		resp.Diagnostics.AddError("UpdateTeam", fmt.Sprintf("failed to update team: %s", err))
 		return
 	}
-	plannedData.CanCreateOrgRepo = types.BoolValue(team.CanCreateOrgRepo)
-	plannedData.Description = types.StringValue(team.Description)
-	plannedData.Id = types.Int64Value(team.Id)
-	plannedData.IncludesAllRepositories = types.BoolValue(team.IncludesAllRepositories)
-	plannedData.Name = types.StringValue(team.Name)
+	plannedData.CanCreateOrgRepo = knownOr(plannedData.CanCreateOrgRepo, types.BoolValue(team.CanCreateOrgRepo))
+	plannedData.Description = knownOr(plannedData.Description, types.StringValue(team.Description))
+	plannedData.Id = knownOr(plannedData.Id, types.Int64Value(team.Id))
+	plannedData.IncludesAllRepositories = knownOr(plannedData.IncludesAllRepositories, types.BoolValue(team.IncludesAllRepositories))
+	plannedData.Name = knownOr(plannedData.Name, types.StringValue(team.Name))
 	// forgejo does not set team.Organization on PATCH API calls
-	plannedData.Permission = types.StringValue(team.Permission)
+	plannedData.Permission = knownOr(plannedData.Permission, types.StringValue(team.Permission))
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plannedData)...)
 }

@@ -21,24 +21,24 @@ type Organization struct {
 }
 
 type OrganizationCreateRequest struct {
-	Description               string `json:"description,omitempty"`
-	Email                     string `json:"email,omitempty"`
-	FullName                  string `json:"full_name,omitempty"`
-	Location                  string `json:"location,omitempty"`
-	RepoAdminChangeTeamAccess bool   `json:"repo_admin_change_team_access"`
-	Username                  string `json:"username"`
-	Visibility                string `json:"visibility,omitempty"`
-	Website                   string `json:"website,omitempty"`
+	Description               *string `json:"description,omitempty"`
+	Email                     *string `json:"email,omitempty"`
+	FullName                  *string `json:"full_name,omitempty"`
+	Location                  *string `json:"location,omitempty"`
+	RepoAdminChangeTeamAccess *bool   `json:"repo_admin_change_team_access,omitempty"`
+	Username                  string  `json:"username"`
+	Visibility                string  `json:"visibility,omitempty"`
+	Website                   *string `json:"website,omitempty"`
 }
 
 type OrganizationPatchRequest struct {
-	Description               string `json:"description,omitempty"`
-	Email                     string `json:"email,omitempty"`
-	FullName                  string `json:"full_name,omitempty"`
-	Location                  string `json:"location,omitempty"`
-	RepoAdminChangeTeamAccess bool   `json:"repo_admin_change_team_access"`
-	Visibility                string `json:"visibility,omitempty"`
-	Website                   string `json:"website,omitempty"`
+	Description               *string `json:"description,omitempty"`
+	Email                     *string `json:"email,omitempty"`
+	FullName                  *string `json:"full_name,omitempty"`
+	Location                  *string `json:"location,omitempty"`
+	RepoAdminChangeTeamAccess *bool   `json:"repo_admin_change_team_access,omitempty"`
+	Visibility                string  `json:"visibility,omitempty"`
+	Website                   *string `json:"website,omitempty"`
 }
 
 func (c *Client) OrganizationCreate(ctx context.Context, payload *OrganizationCreateRequest) (*Organization, error) {

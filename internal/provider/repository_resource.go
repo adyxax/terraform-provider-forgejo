@@ -55,6 +55,9 @@ func (d *RepositoryResource) Schema(ctx context.Context, req resource.SchemaRequ
 				Computed:            true,
 				CustomType:          timetypes.RFC3339Type{},
 				MarkdownDescription: "The creation date and time.",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"default_branch": schema.StringAttribute{
 				Computed:            true,
@@ -162,11 +165,9 @@ func (d *RepositoryResource) Create(ctx context.Context, req resource.CreateRequ
 	}
 	request := client.RepositoryCreateRequest{
 		DefaultBranch: data.DefaultBranch.ValueString(),
+		Description:   stringPointerIfKnown(data.Description),
 		Name:          data.Name.ValueString(),
 		Private:       data.Private.ValueBool(),
-	}
-	if !data.Description.IsUnknown() {
-		request.Description = data.Description.ValueString()
 	}
 	var repository *client.Repository
 	var err error
@@ -185,30 +186,16 @@ func (d *RepositoryResource) Create(ctx context.Context, req resource.CreateRequ
 		return
 	}
 	updateRequest := client.RepositoryUpdateRequest{
-		DefaultBranch: data.DefaultBranch.ValueString(),
-		Name:          data.Name.ValueString(),
-		Private:       data.Private.ValueBool(),
-	}
-	if !data.HasActions.IsUnknown() {
-		updateRequest.HasActions = data.HasActions.ValueBoolPointer()
-	}
-	if !data.HasIssues.IsUnknown() {
-		updateRequest.HasIssues = data.HasIssues.ValueBoolPointer()
-	}
-	if !data.HasPackages.IsUnknown() {
-		updateRequest.HasPackages = data.HasPackages.ValueBoolPointer()
-	}
-	if !data.HasProjects.IsUnknown() {
-		updateRequest.HasProjects = data.HasProjects.ValueBoolPointer()
-	}
-	if !data.HasPullRequests.IsUnknown() {
-		updateRequest.HasPullRequests = data.HasPullRequests.ValueBoolPointer()
-	}
-	if !data.HasReleases.IsUnknown() {
-		updateRequest.HasReleases = data.HasReleases.ValueBoolPointer()
-	}
-	if !data.HasWiki.IsUnknown() {
-		updateRequest.HasWiki = data.HasWiki.ValueBoolPointer()
+		DefaultBranch:   data.DefaultBranch.ValueString(),
+		HasActions:      boolPointerIfKnown(data.HasActions),
+		HasIssues:       boolPointerIfKnown(data.HasIssues),
+		HasPackages:     boolPointerIfKnown(data.HasPackages),
+		HasProjects:     boolPointerIfKnown(data.HasProjects),
+		HasPullRequests: boolPointerIfKnown(data.HasPullRequests),
+		HasReleases:     boolPointerIfKnown(data.HasReleases),
+		HasWiki:         boolPointerIfKnown(data.HasWiki),
+		Name:            data.Name.ValueString(),
+		Private:         data.Private.ValueBool(),
 	}
 	repository, err = d.client.RepositoryUpdate(
 		ctx,
@@ -306,33 +293,17 @@ func (d *RepositoryResource) Update(ctx context.Context, req resource.UpdateRequ
 		return
 	}
 	request := client.RepositoryUpdateRequest{
-		DefaultBranch: plannedData.DefaultBranch.ValueString(),
-		Name:          plannedData.Name.ValueString(),
-		Private:       plannedData.Private.ValueBool(),
-	}
-	if !plannedData.Description.IsUnknown() {
-		request.Description = plannedData.Description.ValueString()
-	}
-	if !plannedData.HasActions.IsUnknown() {
-		request.HasActions = plannedData.HasActions.ValueBoolPointer()
-	}
-	if !plannedData.HasIssues.IsUnknown() {
-		request.HasIssues = plannedData.HasIssues.ValueBoolPointer()
-	}
-	if !plannedData.HasPackages.IsUnknown() {
-		request.HasPackages = plannedData.HasPackages.ValueBoolPointer()
-	}
-	if !plannedData.HasProjects.IsUnknown() {
-		request.HasProjects = plannedData.HasProjects.ValueBoolPointer()
-	}
-	if !plannedData.HasPullRequests.IsUnknown() {
-		request.HasPullRequests = plannedData.HasPullRequests.ValueBoolPointer()
-	}
-	if !plannedData.HasReleases.IsUnknown() {
-		request.HasReleases = plannedData.HasReleases.ValueBoolPointer()
-	}
-	if !plannedData.HasWiki.IsUnknown() {
-		request.HasWiki = plannedData.HasWiki.ValueBoolPointer()
+		DefaultBranch:   plannedData.DefaultBranch.ValueString(),
+		Description:     stringPointerIfKnown(plannedData.Description),
+		HasActions:      boolPointerIfKnown(plannedData.HasActions),
+		HasIssues:       boolPointerIfKnown(plannedData.HasIssues),
+		HasPackages:     boolPointerIfKnown(plannedData.HasPackages),
+		HasProjects:     boolPointerIfKnown(plannedData.HasProjects),
+		HasPullRequests: boolPointerIfKnown(plannedData.HasPullRequests),
+		HasReleases:     boolPointerIfKnown(plannedData.HasReleases),
+		HasWiki:         boolPointerIfKnown(plannedData.HasWiki),
+		Name:            plannedData.Name.ValueString(),
+		Private:         plannedData.Private.ValueBool(),
 	}
 	repository, err := d.client.RepositoryUpdate(
 		ctx,
