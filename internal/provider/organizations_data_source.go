@@ -7,7 +7,6 @@ import (
 	"git.adyxax.org/adyxax/terraform-provider-forgejo/internal/client"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 type OrganizationsDataSource struct {
@@ -98,20 +97,9 @@ func (d *OrganizationsDataSource) Read(ctx context.Context, req datasource.ReadR
 		resp.Diagnostics.AddError("OrganizationsList", fmt.Sprintf("failed to list organizations: %s", err))
 		return
 	}
-	organizationList := make([]OrganizationDataSourceModel, len(organizations))
-	for i, organization := range organizations {
-		organizationList[i] = OrganizationDataSourceModel{
-			AvatarUrl:                 types.StringValue(organization.AvatarUrl),
-			Description:               types.StringValue(organization.Description),
-			Email:                     types.StringValue(organization.Email),
-			Id:                        types.Int64Value(organization.Id),
-			Location:                  types.StringValue(organization.Location),
-			Name:                      types.StringValue(organization.Name),
-			RepoAdminChangeTeamAccess: types.BoolValue(organization.RepoAdminChangeTeamAccess),
-			Visibility:                types.StringValue(organization.Visibility),
-			Website:                   types.StringValue(organization.Website),
-		}
+	data.Elements = make([]OrganizationDataSourceModel, len(organizations))
+	for i := range organizations {
+		data.Elements[i] = *populateOrganizationDataSourceModel(&organizations[i])
 	}
-	data.Elements = organizationList
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }

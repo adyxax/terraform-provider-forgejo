@@ -88,6 +88,21 @@ func (d *OrganizationDataSource) Configure(ctx context.Context, req datasource.C
 	d.client, _ = req.ProviderData.(*client.Client)
 }
 
+func populateOrganizationDataSourceModel(organization *client.Organization) *OrganizationDataSourceModel {
+	return &OrganizationDataSourceModel{
+		AvatarUrl:                 types.StringValue(organization.AvatarUrl),
+		Description:               types.StringValue(organization.Description),
+		Email:                     types.StringValue(organization.Email),
+		FullName:                  types.StringValue(organization.FullName),
+		Id:                        types.Int64Value(organization.Id),
+		Location:                  types.StringValue(organization.Location),
+		Name:                      types.StringValue(organization.Name),
+		RepoAdminChangeTeamAccess: types.BoolValue(organization.RepoAdminChangeTeamAccess),
+		Visibility:                types.StringValue(organization.Visibility),
+		Website:                   types.StringValue(organization.Website),
+	}
+}
+
 func (d *OrganizationDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var data OrganizationDataSourceModel
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
@@ -99,14 +114,5 @@ func (d *OrganizationDataSource) Read(ctx context.Context, req datasource.ReadRe
 		resp.Diagnostics.AddError("OrganizationGet", fmt.Sprintf("failed to get organization: %s", err))
 		return
 	}
-	data.AvatarUrl = types.StringValue(organization.AvatarUrl)
-	data.Description = types.StringValue(organization.Description)
-	data.Email = types.StringValue(organization.Email)
-	data.Id = types.Int64Value(organization.Id)
-	data.Location = types.StringValue(organization.Location)
-	data.Name = types.StringValue(organization.Name)
-	data.RepoAdminChangeTeamAccess = types.BoolValue(organization.RepoAdminChangeTeamAccess)
-	data.Visibility = types.StringValue(organization.Visibility)
-	data.Website = types.StringValue(organization.Website)
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, populateOrganizationDataSourceModel(organization))...)
 }

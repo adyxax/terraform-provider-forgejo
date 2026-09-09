@@ -13,6 +13,8 @@ All notable changes to this project will be documented in this file.
 - Updated dependencies.
 - Fixed unmanaged attributes cluttering the plan outputs with useless "known
   after apply" entries.
+- Organization and organizations data sources now populate the `full_name`
+  attribute properly.
 
 ## 1.5.8 - 2026-09-02
 
