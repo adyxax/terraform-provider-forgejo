@@ -33,9 +33,9 @@ type TeamDataSourceModel struct {
 	Name                    types.String `tfsdk:"name"`
 	// Appears unused, the TeamsList function always returns nil
 	//Organization            *OrganizationDataSourceModel  `tfsdk:"organization"`
-	Permission types.String            `tfsdk:"permission"`
-	Units      []types.String          `tfsdk:"units"`
-	UnitsMap   map[string]types.String `tfsdk:"units_map"`
+	Permission types.String      `tfsdk:"permission"`
+	Units      []string          `tfsdk:"units"`
+	UnitsMap   map[string]string `tfsdk:"units_map"`
 }
 
 func (d *TeamsDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -103,6 +103,8 @@ func (d *TeamsDataSource) Configure(ctx context.Context, req datasource.Configur
 }
 
 func populateTeamDataSourceModel(team *client.Team) *TeamDataSourceModel {
+	units := slices.Clone(team.Units)
+	slices.Sort(units)
 	return &TeamDataSourceModel{
 		CanCreateOrgRepo:        types.BoolValue(team.CanCreateOrgRepo),
 		Description:             types.StringValue(team.Description),
@@ -110,8 +112,8 @@ func populateTeamDataSourceModel(team *client.Team) *TeamDataSourceModel {
 		IncludesAllRepositories: types.BoolValue(team.IncludesAllRepositories),
 		Name:                    types.StringValue(team.Name),
 		Permission:              types.StringValue(team.Permission),
-		Units:                   make([]types.String, len(team.Units)),
-		UnitsMap:                make(map[string]types.String),
+		Units:                   units,
+		UnitsMap:                team.UnitsMap,
 	}
 }
 
@@ -126,17 +128,9 @@ func (d *TeamsDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 		resp.Diagnostics.AddError("ListTeams", fmt.Sprintf("failed to list teams: %s", err))
 		return
 	}
-	teamsList := make([]TeamDataSourceModel, len(teams))
-	for i, team := range teams {
-		teamsList[i] = *populateTeamDataSourceModel(&team)
-		slices.Sort(team.Units)
-		for j, unit := range team.Units {
-			teamsList[i].Units[j] = types.StringValue(unit)
-		}
-		for unit, perm := range team.UnitsMap {
-			teamsList[i].UnitsMap[unit] = types.StringValue(perm)
-		}
+	data.Elements = make([]TeamDataSourceModel, len(teams))
+	for i := range teams {
+		data.Elements[i] = *populateTeamDataSourceModel(&teams[i])
 	}
-	data.Elements = teamsList
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }

@@ -150,10 +150,7 @@ func (d *TeamResource) Delete(ctx context.Context, req resource.DeleteRequest, r
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	err := d.client.TeamDelete(
-		ctx,
-		data.Id.ValueInt64())
-	if err != nil {
+	if err := d.client.TeamDelete(ctx, data.Id.ValueInt64()); err != nil {
 		resp.Diagnostics.AddError("DeleteTeam", fmt.Sprintf("failed to delete team: %s", err))
 		return
 	}
@@ -162,7 +159,7 @@ func (d *TeamResource) Delete(ctx context.Context, req resource.DeleteRequest, r
 func (r *TeamResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	id, err := strconv.ParseInt(req.ID, 10, 64)
 	if err != nil {
-		resp.Diagnostics.AddError("ImportTeam", fmt.Sprintf("failed to parse int64 id: %s", err))
+		resp.Diagnostics.AddError("ImportTeam", fmt.Sprintf("Expected import identifier to be the team's numeric id: %s", err))
 		return
 	}
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), id)...)
@@ -174,9 +171,7 @@ func (d *TeamResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	team, err := d.client.TeamGet(
-		ctx,
-		data.Id.ValueInt64())
+	team, err := d.client.TeamGet(ctx, data.Id.ValueInt64())
 	if err != nil {
 		resp.Diagnostics.AddError("ReadTeam", fmt.Sprintf("failed to get team: %s", err))
 		return

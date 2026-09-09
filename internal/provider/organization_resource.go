@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"git.adyxax.org/adyxax/terraform-provider-forgejo/internal/client"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -13,6 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -102,6 +104,9 @@ func (d *OrganizationResource) Schema(ctx context.Context, req resource.SchemaRe
 				Default:             stringdefault.StaticString("private"),
 				MarkdownDescription: "The organization's visibility option: `limited`, `private`, `public`. Defaults to `private`. Because of a forgejo API limitation, switching an existing organization to `public` requires administrator credentials.",
 				Optional:            true,
+				Validators: []validator.String{
+					stringvalidator.OneOf("limited", "private", "public"),
+				},
 			},
 			"website": schema.StringAttribute{
 				Computed:            true,

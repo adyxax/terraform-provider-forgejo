@@ -110,7 +110,7 @@ func (r *RepositoryActionsVariableResource) ImportState(ctx context.Context, req
 	if len(idParts) != 3 || idParts[0] == "" || idParts[1] == "" || idParts[2] == "" {
 		resp.Diagnostics.AddError(
 			"Unexpected Import Identifier",
-			fmt.Sprintf("Expected import identifier with format: owner/repository/variableName. Got: %q", req.ID),
+			fmt.Sprintf("Expected import identifier with format: <owner>/<repository>/<variable_name>. Got: %q", req.ID),
 		)
 		return
 	}

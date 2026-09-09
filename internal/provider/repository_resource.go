@@ -203,7 +203,7 @@ func (d *RepositoryResource) Create(ctx context.Context, req resource.CreateRequ
 		data.Name.ValueString(),
 		&updateRequest)
 	if err != nil {
-		resp.Diagnostics.AddError("CreateRepository", fmt.Sprintf("failed to update repository: %s", err))
+		resp.Diagnostics.AddError("CreateRepository", fmt.Sprintf("failed to update repository after creation: %s", err))
 		return
 	}
 	data.CreatedAt = timetypes.NewRFC3339TimeValue(repository.CreatedAt)
@@ -225,12 +225,8 @@ func (d *RepositoryResource) Delete(ctx context.Context, req resource.DeleteRequ
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	err := d.client.RepositoryDelete(
-		ctx,
-		data.Owner.ValueString(),
-		data.Name.ValueString())
-	if err != nil {
-		resp.Diagnostics.AddError("DeleteRepository", fmt.Sprintf("failed to delete Repository: %s", err))
+	if err := d.client.RepositoryDelete(ctx, data.Owner.ValueString(), data.Name.ValueString()); err != nil {
+		resp.Diagnostics.AddError("DeleteRepository", fmt.Sprintf("failed to delete repository: %s", err))
 		return
 	}
 }
@@ -261,12 +257,9 @@ func (d *RepositoryResource) Read(ctx context.Context, req resource.ReadRequest,
 	if owner == "" {
 		owner = d.client.AuthenticatedUser()
 	}
-	repository, err := d.client.RepositoryGet(
-		ctx,
-		owner,
-		data.Name.ValueString())
+	repository, err := d.client.RepositoryGet(ctx, owner, data.Name.ValueString())
 	if err != nil {
-		resp.Diagnostics.AddError("ReadRepository", fmt.Sprintf("failed to get Repository: %s", err))
+		resp.Diagnostics.AddError("ReadRepository", fmt.Sprintf("failed to get repository: %s", err))
 		return
 	}
 	data.CreatedAt = timetypes.NewRFC3339TimeValue(repository.CreatedAt)
@@ -311,7 +304,7 @@ func (d *RepositoryResource) Update(ctx context.Context, req resource.UpdateRequ
 		stateData.Name.ValueString(),
 		&request)
 	if err != nil {
-		resp.Diagnostics.AddError("UpdateRepository", fmt.Sprintf("failed to update Repository: %s", err))
+		resp.Diagnostics.AddError("UpdateRepository", fmt.Sprintf("failed to update repository: %s", err))
 		return
 	}
 	plannedData.CreatedAt = timetypes.NewRFC3339TimeValue(repository.CreatedAt)

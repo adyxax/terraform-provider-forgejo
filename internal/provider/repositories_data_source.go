@@ -82,7 +82,7 @@ type RepositoryDataSourceModel struct {
 	SshUrl         types.String                       `tfsdk:"ssh_url"`
 	StarsCount     types.Int64                        `tfsdk:"stars_count"`
 	Template       types.Bool                         `tfsdk:"template"`
-	Topics         []types.String                     `tfsdk:"topics"`
+	Topics         []string                           `tfsdk:"topics"`
 	UpdatedAt      timetypes.RFC3339                  `tfsdk:"updated_at"`
 	Url            types.String                       `tfsdk:"url"`
 	WatchersCount  types.Int64                        `tfsdk:"watchers_count"`
@@ -451,6 +451,115 @@ func (d *RepositoriesDataSource) Configure(ctx context.Context, req datasource.C
 	d.client, _ = req.ProviderData.(*client.Client)
 }
 
+func populateRepositoryDataSourceModel(repository *client.Repository) *RepositoryDataSourceModel {
+	data := RepositoryDataSourceModel{
+		AllowFastForwardOnlyMerge:     types.BoolValue(repository.AllowFastForwardOnlyMerge),
+		AllowMergeCommits:             types.BoolValue(repository.AllowMergeCommits),
+		AllowRebase:                   types.BoolValue(repository.AllowRebase),
+		AllowRebaseExplicit:           types.BoolValue(repository.AllowRebaseExplicit),
+		AllowRebaseUpdate:             types.BoolValue(repository.AllowRebaseUpdate),
+		AllowSquashMerge:              types.BoolValue(repository.AllowSquashMerge),
+		ArchivedAt:                    timetypes.NewRFC3339TimeValue(repository.ArchivedAt),
+		Archived:                      types.BoolValue(repository.Archived),
+		AvatarUrl:                     types.StringValue(repository.AvatarUrl),
+		CloneUrl:                      types.StringValue(repository.CloneUrl),
+		CreatedAt:                     timetypes.NewRFC3339TimeValue(repository.CreatedAt),
+		DefaultAllowMaintainerEdit:    types.BoolValue(repository.DefaultAllowMaintainerEdit),
+		DefaultBranch:                 types.StringValue(repository.DefaultBranch),
+		DefaultDeleteBranchAfterMerge: types.BoolValue(repository.DefaultDeleteBranchAfterMerge),
+		DefaultMergeStyle:             types.StringValue(repository.DefaultMergeStyle),
+		DefaultUpdateStyle:            types.StringValue(repository.DefaultUpdateStyle),
+		Description:                   types.StringValue(repository.Description),
+		Empty:                         types.BoolValue(repository.Empty),
+		Fork:                          types.BoolValue(repository.Fork),
+		ForksCount:                    types.Int64Value(repository.ForksCount),
+		FullName:                      types.StringValue(repository.FullName),
+		GloballyEditableWiki:          types.BoolValue(repository.GloballyEditableWiki),
+		HasActions:                    types.BoolValue(repository.HasActions),
+		HasIssues:                     types.BoolValue(repository.HasIssues),
+		HasPackages:                   types.BoolValue(repository.HasPackages),
+		HasProjects:                   types.BoolValue(repository.HasProjects),
+		HasPullRequests:               types.BoolValue(repository.HasPullRequests),
+		HasReleases:                   types.BoolValue(repository.HasReleases),
+		HasWiki:                       types.BoolValue(repository.HasWiki),
+		HtmlUrl:                       types.StringValue(repository.HtmlUrl),
+		Id:                            types.Int64Value(repository.Id),
+		IgnoreWhitespaceConflicts:     types.BoolValue(repository.IgnoreWhitespaceConflicts),
+		Internal:                      types.BoolValue(repository.Internal),
+		Language:                      types.StringValue(repository.Language),
+		LanguagesUrl:                  types.StringValue(repository.LanguagesUrl),
+		Link:                          types.StringValue(repository.Link),
+		Mirror:                        types.BoolValue(repository.Mirror),
+		MirrorInterval:                types.StringValue(repository.MirrorInterval),
+		MirrorUpdated:                 timetypes.NewRFC3339TimeValue(repository.MirrorUpdated),
+		Name:                          types.StringValue(repository.Name),
+		ObjectFormatName:              types.StringValue(repository.ObjectFormatName),
+		OpenIssuesCount:               types.Int64Value(repository.OpenIssuesCount),
+		OpenPrCounter:                 types.Int64Value(repository.OpenPrCounter),
+		OriginalUrl:                   types.StringValue(repository.OriginalUrl),
+		Private:                       types.BoolValue(repository.Private),
+		ReleaseCounter:                types.Int64Value(repository.ReleaseCounter),
+		Size:                          types.Int64Value(repository.Size),
+		SshUrl:                        types.StringValue(repository.SshUrl),
+		StarsCount:                    types.Int64Value(repository.StarsCount),
+		Template:                      types.BoolValue(repository.Template),
+		Topics:                        repository.Topics,
+		UpdatedAt:                     timetypes.NewRFC3339TimeValue(repository.UpdatedAt),
+		Url:                           types.StringValue(repository.Url),
+		WatchersCount:                 types.Int64Value(repository.WatchersCount),
+		Website:                       types.StringValue(repository.Website),
+		WikiBranch:                    types.StringValue(repository.WikiBranch),
+	}
+	if repository.ExternalTracker != nil {
+		data.ExternalTracker = &RepositoryExternalTrackerDataSourceModel{
+			Description:   types.StringValue(repository.ExternalTracker.Description),
+			Format:        types.StringValue(repository.ExternalTracker.Format),
+			RegexpPattern: types.StringValue(repository.ExternalTracker.RegexpPattern),
+			Style:         types.StringValue(repository.ExternalTracker.Style),
+			Url:           types.StringValue(repository.ExternalTracker.Url),
+		}
+	}
+	if repository.ExternalWiki != nil {
+		data.ExternalWiki = &RepositoryExternalWikiDataSourceModel{
+			Description: types.StringValue(repository.ExternalWiki.Description),
+			Url:         types.StringValue(repository.ExternalWiki.Url),
+		}
+	}
+	if repository.InternalTracker != nil {
+		data.InternalTracker = &RepositoryInternalTrackerDataSourceModel{
+			AllowOnlyContributorsToTrackTime: types.BoolValue(repository.InternalTracker.AllowOnlyContributorsToTrackTime),
+			EnableIssueDependencies:          types.BoolValue(repository.InternalTracker.EnableIssueDependencies),
+			EnableTimeTracker:                types.BoolValue(repository.InternalTracker.EnableTimeTracker),
+		}
+	}
+	if repository.Owner != nil {
+		data.Owner = populateUserDataSourceModel(repository.Owner)
+	}
+	if repository.Permissions != nil {
+		data.Permissions = &PermissionDataSourceModel{
+			Admin: types.BoolValue(repository.Permissions.Admin),
+			Pull:  types.BoolValue(repository.Permissions.Pull),
+			Push:  types.BoolValue(repository.Permissions.Push),
+		}
+	}
+	if repository.RepoTransfer != nil {
+		data.RepoTransfer = &RepositoryTransferDataSourceModel{
+			Description: types.StringValue(repository.RepoTransfer.Description),
+			Teams:       make([]TeamDataSourceModel, len(repository.RepoTransfer.Teams)),
+		}
+		if repository.RepoTransfer.Doer != nil {
+			data.RepoTransfer.Doer = populateUserDataSourceModel(repository.RepoTransfer.Doer)
+		}
+		if repository.RepoTransfer.Recipient != nil {
+			data.RepoTransfer.Recipient = populateUserDataSourceModel(repository.RepoTransfer.Recipient)
+		}
+		for i := range repository.RepoTransfer.Teams {
+			data.RepoTransfer.Teams[i] = *populateTeamDataSourceModel(&repository.RepoTransfer.Teams[i])
+		}
+	}
+	return &data
+}
+
 func (d *RepositoriesDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var data RepositoriesDataSourceModel
 	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
@@ -462,119 +571,9 @@ func (d *RepositoriesDataSource) Read(ctx context.Context, req datasource.ReadRe
 		resp.Diagnostics.AddError("ListRepositories", fmt.Sprintf("failed to list repositories: %s", err))
 		return
 	}
-	repositoriesList := make([]RepositoryDataSourceModel, len(repositories))
-	for i, repository := range repositories {
-		repositoriesList[i] = RepositoryDataSourceModel{
-			AllowFastForwardOnlyMerge:     types.BoolValue(repository.AllowFastForwardOnlyMerge),
-			AllowMergeCommits:             types.BoolValue(repository.AllowMergeCommits),
-			AllowRebase:                   types.BoolValue(repository.AllowRebase),
-			AllowRebaseExplicit:           types.BoolValue(repository.AllowRebaseExplicit),
-			AllowRebaseUpdate:             types.BoolValue(repository.AllowRebaseUpdate),
-			AllowSquashMerge:              types.BoolValue(repository.AllowSquashMerge),
-			ArchivedAt:                    timetypes.NewRFC3339TimeValue(repository.ArchivedAt),
-			Archived:                      types.BoolValue(repository.Archived),
-			AvatarUrl:                     types.StringValue(repository.AvatarUrl),
-			CloneUrl:                      types.StringValue(repository.CloneUrl),
-			CreatedAt:                     timetypes.NewRFC3339TimeValue(repository.CreatedAt),
-			DefaultAllowMaintainerEdit:    types.BoolValue(repository.DefaultAllowMaintainerEdit),
-			DefaultBranch:                 types.StringValue(repository.DefaultBranch),
-			DefaultDeleteBranchAfterMerge: types.BoolValue(repository.DefaultDeleteBranchAfterMerge),
-			DefaultMergeStyle:             types.StringValue(repository.DefaultMergeStyle),
-			DefaultUpdateStyle:            types.StringValue(repository.DefaultUpdateStyle),
-			Description:                   types.StringValue(repository.Description),
-			Empty:                         types.BoolValue(repository.Empty),
-			ExternalTracker:               nil,
-			ExternalWiki:                  nil,
-			Fork:                          types.BoolValue(repository.Fork),
-			ForksCount:                    types.Int64Value(repository.ForksCount),
-			FullName:                      types.StringValue(repository.FullName),
-			GloballyEditableWiki:          types.BoolValue(repository.GloballyEditableWiki),
-			HasActions:                    types.BoolValue(repository.HasActions),
-			HasIssues:                     types.BoolValue(repository.HasIssues),
-			HasPackages:                   types.BoolValue(repository.HasPackages),
-			HasProjects:                   types.BoolValue(repository.HasProjects),
-			HasPullRequests:               types.BoolValue(repository.HasPullRequests),
-			HasReleases:                   types.BoolValue(repository.HasReleases),
-			HasWiki:                       types.BoolValue(repository.HasWiki),
-			HtmlUrl:                       types.StringValue(repository.HtmlUrl),
-			Id:                            types.Int64Value(repository.Id),
-			IgnoreWhitespaceConflicts:     types.BoolValue(repository.IgnoreWhitespaceConflicts),
-			Internal:                      types.BoolValue(repository.Internal),
-			InternalTracker:               nil,
-			Language:                      types.StringValue(repository.Language),
-			LanguagesUrl:                  types.StringValue(repository.LanguagesUrl),
-			Link:                          types.StringValue(repository.Link),
-			Mirror:                        types.BoolValue(repository.Mirror),
-			MirrorInterval:                types.StringValue(repository.MirrorInterval),
-			MirrorUpdated:                 timetypes.NewRFC3339TimeValue(repository.MirrorUpdated),
-			Name:                          types.StringValue(repository.Name),
-			ObjectFormatName:              types.StringValue(repository.ObjectFormatName),
-			OpenIssuesCount:               types.Int64Value(repository.OpenIssuesCount),
-			OpenPrCounter:                 types.Int64Value(repository.OpenPrCounter),
-			OriginalUrl:                   types.StringValue(repository.OriginalUrl),
-			Owner:                         nil,
-			Permissions:                   nil,
-			Private:                       types.BoolValue(repository.Private),
-			ReleaseCounter:                types.Int64Value(repository.ReleaseCounter),
-			RepoTransfer:                  nil,
-			Size:                          types.Int64Value(repository.Size),
-			SshUrl:                        types.StringValue(repository.SshUrl),
-			StarsCount:                    types.Int64Value(repository.StarsCount),
-			Template:                      types.BoolValue(repository.Template),
-			Topics:                        make([]types.String, len(repository.Topics)),
-			UpdatedAt:                     timetypes.NewRFC3339TimeValue(repository.UpdatedAt),
-			Url:                           types.StringValue(repository.Url),
-			WatchersCount:                 types.Int64Value(repository.WatchersCount),
-			Website:                       types.StringValue(repository.Website),
-			WikiBranch:                    types.StringValue(repository.WikiBranch),
-		}
-		if repository.ExternalTracker != nil {
-			repositoriesList[i].ExternalTracker = &RepositoryExternalTrackerDataSourceModel{
-				Description:   types.StringValue(repository.ExternalTracker.Description),
-				Format:        types.StringValue(repository.ExternalTracker.Format),
-				RegexpPattern: types.StringValue(repository.ExternalTracker.RegexpPattern),
-				Style:         types.StringValue(repository.ExternalTracker.Style),
-				Url:           types.StringValue(repository.ExternalTracker.Url),
-			}
-		}
-		if repository.ExternalWiki != nil {
-			repositoriesList[i].ExternalWiki = &RepositoryExternalWikiDataSourceModel{
-				Description: types.StringValue(repository.ExternalTracker.Description),
-				Url:         types.StringValue(repository.ExternalTracker.Url),
-			}
-		}
-		if repository.InternalTracker != nil {
-			repositoriesList[i].InternalTracker = &RepositoryInternalTrackerDataSourceModel{
-				AllowOnlyContributorsToTrackTime: types.BoolValue(repository.InternalTracker.AllowOnlyContributorsToTrackTime),
-				EnableIssueDependencies:          types.BoolValue(repository.InternalTracker.EnableIssueDependencies),
-				EnableTimeTracker:                types.BoolValue(repository.InternalTracker.EnableTimeTracker),
-			}
-		}
-		if repository.Owner != nil {
-			repositoriesList[i].Owner = populateUserDataSourceModel(repository.Owner)
-		}
-		if repository.Permissions != nil {
-			repositoriesList[i].Permissions = &PermissionDataSourceModel{
-				Admin: types.BoolValue(repository.Permissions.Admin),
-				Pull:  types.BoolValue(repository.Permissions.Pull),
-				Push:  types.BoolValue(repository.Permissions.Push),
-			}
-		}
-		if repository.RepoTransfer != nil {
-			repositoriesList[i].RepoTransfer = &RepositoryTransferDataSourceModel{
-				Description: types.StringValue(repository.RepoTransfer.Description),
-				Doer:        populateUserDataSourceModel(repository.RepoTransfer.Doer),
-				Recipient:   populateUserDataSourceModel(repository.RepoTransfer.Recipient),
-				Teams:       make([]TeamDataSourceModel, len(repository.RepoTransfer.Teams)),
-			}
-			for j, team := range repository.RepoTransfer.Teams {
-				repositoriesList[i].RepoTransfer.Teams[j] = *populateTeamDataSourceModel(&team)
-			}
-		}
-		for j, topic := range repository.Topics {
-			repositoriesList[i].Topics[j] = types.StringValue(topic)
-		}
+	data.Elements = make([]RepositoryDataSourceModel, len(repositories))
+	for i := range repositories {
+		data.Elements[i] = *populateRepositoryDataSourceModel(&repositories[i])
 	}
-	data.Elements = repositoriesList
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }

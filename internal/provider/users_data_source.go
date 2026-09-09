@@ -208,10 +208,9 @@ func (d *UsersDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 		resp.Diagnostics.AddError("ListUsers", fmt.Sprintf("failed to list users: %s", err))
 		return
 	}
-	userList := make([]UserDataSourceModel, len(users))
-	for i, user := range users {
-		userList[i] = *populateUserDataSourceModel(&user)
+	data.Elements = make([]UserDataSourceModel, len(users))
+	for i := range users {
+		data.Elements[i] = *populateUserDataSourceModel(&users[i])
 	}
-	data.Elements = userList
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
