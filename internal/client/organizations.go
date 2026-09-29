@@ -82,5 +82,9 @@ func (c *Client) OrganizationUpdate(ctx context.Context, name string, payload *O
 	if _, err := c.send(ctx, "PATCH", &uriRef, payload, &response); err != nil {
 		return nil, fmt.Errorf("failed to update organization: %w", err)
 	}
+	if payload.Visibility != "" && response.Visibility != payload.Visibility {
+		settingsURL := c.baseURI.ResolveReference(&url.URL{Path: path.Join("org", name, "settings")})
+		return nil, fmt.Errorf("forgejo ignored the visibility change to %q, the organization is still %q. This is a forgejo API bug that was fixed by yours truly in v16.0.5: https://codeberg.org/forgejo/forgejo/pulls/14287. If you cannot upgrade your Forgejo instance, change the visibility from the web UI at %s and run terraform again, the change will be picked up on refresh", payload.Visibility, response.Visibility, settingsURL)
+	}
 	return &response, nil
 }
