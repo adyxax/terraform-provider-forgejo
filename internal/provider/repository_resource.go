@@ -157,36 +157,26 @@ func (d *RepositoryResource) Configure(ctx context.Context, req resource.Configu
 	d.client, _ = req.ProviderData.(*client.Client)
 }
 
-func (d *RepositoryResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var data RepositoryResourceModel
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-	request := client.RepositoryCreateRequest{
-		DefaultBranch: data.DefaultBranch.ValueString(),
-		Description:   stringPointerIfKnown(data.Description),
-		Name:          data.Name.ValueString(),
-		Private:       data.Private.ValueBool(),
-	}
-	var repository *client.Repository
-	var err error
-	if data.Owner.IsUnknown() {
-		repository, err = d.client.UserRepositoryCreate(
-			ctx,
-			&request)
-	} else {
-		repository, err = d.client.OrganizationRepositoryCreate(
-			ctx,
-			data.Owner.ValueString(),
-			&request)
-	}
-	if err != nil {
-		resp.Diagnostics.AddError("CreateRepository", fmt.Sprintf("failed to create repository: %s", err))
-		return
-	}
-	updateRequest := client.RepositoryUpdateRequest{
+func populateRepositoryResourceModel(data *RepositoryResourceModel, repository *client.Repository) {
+	data.CreatedAt = timetypes.NewRFC3339TimeValue(repository.CreatedAt)
+	data.DefaultBranch = types.StringValue(repository.DefaultBranch)
+	data.Description = types.StringValue(repository.Description)
+	data.HasActions = types.BoolValue(repository.HasActions)
+	data.HasIssues = types.BoolValue(repository.HasIssues)
+	data.HasPackages = types.BoolValue(repository.HasPackages)
+	data.HasProjects = types.BoolValue(repository.HasProjects)
+	data.HasPullRequests = types.BoolValue(repository.HasPullRequests)
+	data.HasReleases = types.BoolValue(repository.HasReleases)
+	data.HasWiki = types.BoolValue(repository.HasWiki)
+	data.Name = types.StringValue(repository.Name)
+	data.Owner = types.StringValue(repository.Owner.Login)
+	data.Private = types.BoolValue(repository.Private)
+}
+
+func repositoryUpdateRequest(data *RepositoryResourceModel) *client.RepositoryUpdateRequest {
+	return &client.RepositoryUpdateRequest{
 		DefaultBranch:   data.DefaultBranch.ValueString(),
+		Description:     stringPointerIfKnown(data.Description),
 		HasActions:      boolPointerIfKnown(data.HasActions),
 		HasIssues:       boolPointerIfKnown(data.HasIssues),
 		HasPackages:     boolPointerIfKnown(data.HasPackages),
@@ -197,25 +187,43 @@ func (d *RepositoryResource) Create(ctx context.Context, req resource.CreateRequ
 		Name:            data.Name.ValueString(),
 		Private:         data.Private.ValueBool(),
 	}
+}
+
+func (d *RepositoryResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var data RepositoryResourceModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	createRequest := client.RepositoryCreateRequest{
+		DefaultBranch: data.DefaultBranch.ValueString(),
+		Description:   stringPointerIfKnown(data.Description),
+		Name:          data.Name.ValueString(),
+		Private:       data.Private.ValueBool(),
+	}
+	var repository *client.Repository
+	var err error
+	if data.Owner.IsUnknown() || data.Owner.IsNull() {
+		repository, err = d.client.UserRepositoryCreate(ctx, &createRequest)
+	} else {
+		repository, err = d.client.OrganizationRepositoryCreate(ctx, data.Owner.ValueString(), &createRequest)
+	}
+	if err != nil {
+		resp.Diagnostics.AddError("CreateRepository", fmt.Sprintf("failed to create repository: %s", err))
+		return
+	}
+	// The create API does not accept all attributes, so we need a second one to
+	// apply everything.
 	repository, err = d.client.RepositoryUpdate(
 		ctx,
 		repository.Owner.Login,
-		data.Name.ValueString(),
-		&updateRequest)
+		repository.Name,
+		repositoryUpdateRequest(&data))
 	if err != nil {
 		resp.Diagnostics.AddError("CreateRepository", fmt.Sprintf("failed to update repository after creation: %s", err))
 		return
 	}
-	data.CreatedAt = timetypes.NewRFC3339TimeValue(repository.CreatedAt)
-	data.Description = types.StringValue(repository.Description)
-	data.HasActions = types.BoolValue(repository.HasActions)
-	data.HasIssues = types.BoolValue(repository.HasIssues)
-	data.HasPackages = types.BoolValue(repository.HasPackages)
-	data.HasProjects = types.BoolValue(repository.HasProjects)
-	data.HasPullRequests = types.BoolValue(repository.HasPullRequests)
-	data.HasReleases = types.BoolValue(repository.HasReleases)
-	data.HasWiki = types.BoolValue(repository.HasWiki)
-	data.Owner = types.StringValue(repository.Owner.Login)
+	populateRepositoryResourceModel(&data, repository)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -233,13 +241,14 @@ func (d *RepositoryResource) Delete(ctx context.Context, req resource.DeleteRequ
 
 func (r *RepositoryResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	idParts := strings.Split(req.ID, "/")
-	if len(idParts) == 1 && idParts[0] != "" {
+	switch {
+	case len(idParts) == 1 && idParts[0] != "":
 		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("owner"), r.client.AuthenticatedUser())...)
 		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("name"), idParts[0])...)
-	} else if len(idParts) == 2 && idParts[0] != "" && idParts[1] != "" {
+	case len(idParts) == 2 && idParts[0] != "" && idParts[1] != "":
 		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("owner"), idParts[0])...)
 		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("name"), idParts[1])...)
-	} else {
+	default:
 		resp.Diagnostics.AddError(
 			"Unexpected Import Identifier",
 			fmt.Sprintf("Expected import identifier with either format <repository> or format <owner>/<repository>. Got: %q", req.ID),
@@ -262,18 +271,7 @@ func (d *RepositoryResource) Read(ctx context.Context, req resource.ReadRequest,
 		resp.Diagnostics.AddError("ReadRepository", fmt.Sprintf("failed to get repository: %s", err))
 		return
 	}
-	data.CreatedAt = timetypes.NewRFC3339TimeValue(repository.CreatedAt)
-	data.DefaultBranch = types.StringValue(repository.DefaultBranch)
-	data.Description = types.StringValue(repository.Description)
-	data.HasActions = types.BoolValue(repository.HasActions)
-	data.HasIssues = types.BoolValue(repository.HasIssues)
-	data.HasPackages = types.BoolValue(repository.HasPackages)
-	data.HasProjects = types.BoolValue(repository.HasProjects)
-	data.HasPullRequests = types.BoolValue(repository.HasPullRequests)
-	data.HasReleases = types.BoolValue(repository.HasReleases)
-	data.HasWiki = types.BoolValue(repository.HasWiki)
-	data.Owner = types.StringValue(repository.Owner.Login)
-	data.Private = types.BoolValue(repository.Private)
+	populateRepositoryResourceModel(&data, repository)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -285,32 +283,29 @@ func (d *RepositoryResource) Update(ctx context.Context, req resource.UpdateRequ
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	request := client.RepositoryUpdateRequest{
-		DefaultBranch:   plannedData.DefaultBranch.ValueString(),
-		Description:     stringPointerIfKnown(plannedData.Description),
-		HasActions:      boolPointerIfKnown(plannedData.HasActions),
-		HasIssues:       boolPointerIfKnown(plannedData.HasIssues),
-		HasPackages:     boolPointerIfKnown(plannedData.HasPackages),
-		HasProjects:     boolPointerIfKnown(plannedData.HasProjects),
-		HasPullRequests: boolPointerIfKnown(plannedData.HasPullRequests),
-		HasReleases:     boolPointerIfKnown(plannedData.HasReleases),
-		HasWiki:         boolPointerIfKnown(plannedData.HasWiki),
-		Name:            plannedData.Name.ValueString(),
-		Private:         plannedData.Private.ValueBool(),
-	}
 	repository, err := d.client.RepositoryUpdate(
 		ctx,
 		stateData.Owner.ValueString(),
 		stateData.Name.ValueString(),
-		&request)
+		repositoryUpdateRequest(&plannedData))
 	if err != nil {
 		resp.Diagnostics.AddError("UpdateRepository", fmt.Sprintf("failed to update repository: %s", err))
 		return
 	}
-	plannedData.CreatedAt = timetypes.NewRFC3339TimeValue(repository.CreatedAt)
-	if plannedData.Description.IsUnknown() {
-		plannedData.Description = types.StringValue(repository.Description)
-	}
-	plannedData.Owner = stateData.Owner
+	var serverData RepositoryResourceModel
+	populateRepositoryResourceModel(&serverData, repository)
+	plannedData.CreatedAt = knownOr(plannedData.CreatedAt, serverData.CreatedAt)
+	plannedData.DefaultBranch = knownOr(plannedData.DefaultBranch, serverData.DefaultBranch)
+	plannedData.Description = knownOr(plannedData.Description, serverData.Description)
+	plannedData.HasActions = knownOr(plannedData.HasActions, serverData.HasActions)
+	plannedData.HasIssues = knownOr(plannedData.HasIssues, serverData.HasIssues)
+	plannedData.HasPackages = knownOr(plannedData.HasPackages, serverData.HasPackages)
+	plannedData.HasProjects = knownOr(plannedData.HasProjects, serverData.HasProjects)
+	plannedData.HasPullRequests = knownOr(plannedData.HasPullRequests, serverData.HasPullRequests)
+	plannedData.HasReleases = knownOr(plannedData.HasReleases, serverData.HasReleases)
+	plannedData.HasWiki = knownOr(plannedData.HasWiki, serverData.HasWiki)
+	plannedData.Name = knownOr(plannedData.Name, serverData.Name)
+	plannedData.Owner = knownOr(plannedData.Owner, serverData.Owner)
+	plannedData.Private = knownOr(plannedData.Private, serverData.Private)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plannedData)...)
 }

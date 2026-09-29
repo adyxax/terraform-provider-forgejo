@@ -99,48 +99,61 @@ func (d *TeamResource) Configure(ctx context.Context, req resource.ConfigureRequ
 	d.client, _ = req.ProviderData.(*client.Client)
 }
 
+func teamUnits(permission string) []string {
+	// admin teams implicitly get all units.
+	if permission == "admin" {
+		return nil
+	}
+	return []string{
+		"repo.code",
+		"repo.issues",
+		"repo.ext_issues",
+		"repo.releases",
+		"repo.wiki",
+		"repo.ext_wiki",
+		"repo.packages",
+		"repo.pulls",
+		"repo.projects",
+		"repo.actions",
+	}
+}
+
+func populateTeamResourceModel(data *TeamResourceModel, team *client.Team) {
+	data.CanCreateOrgRepo = types.BoolValue(team.CanCreateOrgRepo)
+	data.Description = types.StringValue(team.Description)
+	data.Id = types.Int64Value(team.Id)
+	data.IncludesAllRepositories = types.BoolValue(team.IncludesAllRepositories)
+	data.Name = types.StringValue(team.Name)
+	// forgejo does not set team.Organization on PATCH API responses
+	if team.Organization != nil {
+		data.OrganizationName = types.StringValue(team.Organization.Name)
+	}
+	data.Permission = types.StringValue(team.Permission)
+}
+
+func teamRequest(data *TeamResourceModel) *client.TeamRequest {
+	return &client.TeamRequest{
+		CanCreateOrgRepo:        data.CanCreateOrgRepo.ValueBool(),
+		Description:             stringPointerIfKnown(data.Description),
+		IncludesAllRepositories: data.IncludesAllRepositories.ValueBool(),
+		Name:                    data.Name.ValueString(),
+		Permission:              data.Permission.ValueString(),
+		Units:                   teamUnits(data.Permission.ValueString()),
+	}
+}
+
 func (d *TeamResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var data TeamResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	request := client.TeamRequest{
-		CanCreateOrgRepo:        data.CanCreateOrgRepo.ValueBool(),
-		Description:             stringPointerIfKnown(data.Description),
-		IncludesAllRepositories: data.IncludesAllRepositories.ValueBool(),
-		Name:                    data.Name.ValueString(),
-		Permission:              data.Permission.ValueString(),
-	}
-	if data.Permission.ValueString() == "write" {
-		request.Units = []string{
-			"repo.code",
-			"repo.issues",
-			"repo.ext_issues",
-			"repo.releases",
-			"repo.wiki",
-			"repo.ext_wiki",
-			"repo.packages",
-			"repo.pulls",
-			"repo.projects",
-			"repo.actions",
-		}
-	}
-	team, err := d.client.TeamCreate(
-		ctx,
-		data.OrganizationName.ValueString(),
-		&request)
+	team, err := d.client.TeamCreate(ctx, data.OrganizationName.ValueString(), teamRequest(&data))
 	if err != nil {
 		resp.Diagnostics.AddError("CreateTeam", fmt.Sprintf("failed to create team: %s", err))
 		return
 	}
-	data.CanCreateOrgRepo = types.BoolValue(team.CanCreateOrgRepo)
-	data.Description = types.StringValue(team.Description)
-	data.Id = types.Int64Value(team.Id)
-	data.IncludesAllRepositories = types.BoolValue(team.IncludesAllRepositories)
-	data.Name = types.StringValue(team.Name)
-	data.OrganizationName = types.StringValue(team.Organization.Name)
-	data.Permission = types.StringValue(team.Permission)
+	populateTeamResourceModel(&data, team)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -176,13 +189,7 @@ func (d *TeamResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 		resp.Diagnostics.AddError("ReadTeam", fmt.Sprintf("failed to get team: %s", err))
 		return
 	}
-	data.CanCreateOrgRepo = types.BoolValue(team.CanCreateOrgRepo)
-	data.Description = types.StringValue(team.Description)
-	data.Id = types.Int64Value(team.Id)
-	data.IncludesAllRepositories = types.BoolValue(team.IncludesAllRepositories)
-	data.Name = types.StringValue(team.Name)
-	data.OrganizationName = types.StringValue(team.Organization.Name)
-	data.Permission = types.StringValue(team.Permission)
+	populateTeamResourceModel(&data, team)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -194,41 +201,19 @@ func (d *TeamResource) Update(ctx context.Context, req resource.UpdateRequest, r
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	request := client.TeamRequest{
-		CanCreateOrgRepo:        plannedData.CanCreateOrgRepo.ValueBool(),
-		Description:             stringPointerIfKnown(plannedData.Description),
-		IncludesAllRepositories: plannedData.IncludesAllRepositories.ValueBool(),
-		Name:                    plannedData.Name.ValueString(),
-		Permission:              plannedData.Permission.ValueString(),
-	}
-	if plannedData.Permission.ValueString() != "admin" {
-		request.Units = []string{
-			"repo.code",
-			"repo.issues",
-			"repo.ext_issues",
-			"repo.releases",
-			"repo.wiki",
-			"repo.ext_wiki",
-			"repo.packages",
-			"repo.pulls",
-			"repo.projects",
-			"repo.actions",
-		}
-	}
-	team, err := d.client.TeamUpdate(
-		ctx,
-		stateData.Id.ValueInt64(),
-		&request)
+	team, err := d.client.TeamUpdate(ctx, stateData.Id.ValueInt64(), teamRequest(&plannedData))
 	if err != nil {
 		resp.Diagnostics.AddError("UpdateTeam", fmt.Sprintf("failed to update team: %s", err))
 		return
 	}
-	plannedData.CanCreateOrgRepo = knownOr(plannedData.CanCreateOrgRepo, types.BoolValue(team.CanCreateOrgRepo))
-	plannedData.Description = knownOr(plannedData.Description, types.StringValue(team.Description))
-	plannedData.Id = knownOr(plannedData.Id, types.Int64Value(team.Id))
-	plannedData.IncludesAllRepositories = knownOr(plannedData.IncludesAllRepositories, types.BoolValue(team.IncludesAllRepositories))
-	plannedData.Name = knownOr(plannedData.Name, types.StringValue(team.Name))
-	// forgejo does not set team.Organization on PATCH API calls
-	plannedData.Permission = knownOr(plannedData.Permission, types.StringValue(team.Permission))
+	var serverData TeamResourceModel
+	populateTeamResourceModel(&serverData, team)
+	plannedData.CanCreateOrgRepo = knownOr(plannedData.CanCreateOrgRepo, serverData.CanCreateOrgRepo)
+	plannedData.Description = knownOr(plannedData.Description, serverData.Description)
+	plannedData.Id = knownOr(plannedData.Id, serverData.Id)
+	plannedData.IncludesAllRepositories = knownOr(plannedData.IncludesAllRepositories, serverData.IncludesAllRepositories)
+	plannedData.Name = knownOr(plannedData.Name, serverData.Name)
+	// organization_name is Required and RequiresReplace so it is always known
+	plannedData.Permission = knownOr(plannedData.Permission, serverData.Permission)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plannedData)...)
 }

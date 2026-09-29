@@ -103,30 +103,42 @@ func (d *RepositoryLabelResource) Configure(ctx context.Context, req resource.Co
 	d.client, _ = req.ProviderData.(*client.Client)
 }
 
-func (d *RepositoryLabelResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var data RepositoryLabelResourceModel
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-	request := client.RepositoryLabelCreateRequest{
+func populateRepositoryLabelResourceModel(data *RepositoryLabelResourceModel, label *client.RepositoryLabel) {
+	data.Color = types.StringValue(label.Color)
+	data.Description = types.StringValue(label.Description)
+	data.Exclusive = types.BoolValue(label.Exclusive)
+	data.Id = types.Int64Value(label.Id)
+	data.IsArchived = types.BoolValue(label.IsArchived)
+	data.Name = types.StringValue(label.Name)
+	data.Url = types.StringValue(label.Url)
+}
+
+func repositoryLabelRequest(data *RepositoryLabelResourceModel) *client.RepositoryLabelCreateRequest {
+	return &client.RepositoryLabelCreateRequest{
 		Color:       data.Color.ValueString(),
 		Description: data.Description.ValueString(),
 		Exclusive:   data.Exclusive.ValueBool(),
 		IsArchived:  data.IsArchived.ValueBool(),
 		Name:        data.Name.ValueString(),
 	}
+}
+
+func (d *RepositoryLabelResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var data RepositoryLabelResourceModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 	label, err := d.client.RepositoryLabelCreate(
 		ctx,
 		data.Owner.ValueString(),
 		data.Repository.ValueString(),
-		&request)
+		repositoryLabelRequest(&data))
 	if err != nil {
 		resp.Diagnostics.AddError("CreateRepositoryLabel", fmt.Sprintf("failed to create repository label: %s", err))
 		return
 	}
-	data.Id = types.Int64Value(label.Id)
-	data.Url = types.StringValue(label.Url)
+	populateRepositoryLabelResourceModel(&data, label)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -162,12 +174,7 @@ func (d *RepositoryLabelResource) Read(ctx context.Context, req resource.ReadReq
 		resp.Diagnostics.AddError("ReadRepositoryLabel", fmt.Sprintf("failed to get repository label: %s", err))
 		return
 	}
-	data.Color = types.StringValue(label.Color)
-	data.Description = types.StringValue(label.Description)
-	data.Exclusive = types.BoolValue(label.Exclusive)
-	data.IsArchived = types.BoolValue(label.IsArchived)
-	data.Name = types.StringValue(label.Name)
-	data.Url = types.StringValue(label.Url)
+	populateRepositoryLabelResourceModel(&data, label)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -179,24 +186,24 @@ func (d *RepositoryLabelResource) Update(ctx context.Context, req resource.Updat
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	request := client.RepositoryLabelUpdateRequest{
-		Color:       plannedData.Color.ValueString(),
-		Description: plannedData.Description.ValueString(),
-		Exclusive:   plannedData.Exclusive.ValueBool(),
-		IsArchived:  plannedData.IsArchived.ValueBool(),
-		Name:        plannedData.Name.ValueString(),
-	}
 	label, err := d.client.RepositoryLabelUpdate(
 		ctx,
 		plannedData.Owner.ValueString(),
 		plannedData.Repository.ValueString(),
 		stateData.Id.ValueInt64(),
-		&request)
+		repositoryLabelRequest(&plannedData))
 	if err != nil {
 		resp.Diagnostics.AddError("UpdateRepositoryLabel", fmt.Sprintf("failed to update repository label: %s", err))
 		return
 	}
-	plannedData.Id = types.Int64Value(label.Id)
-	plannedData.Url = types.StringValue(label.Url)
+	var serverData RepositoryLabelResourceModel
+	populateRepositoryLabelResourceModel(&serverData, label)
+	plannedData.Color = knownOr(plannedData.Color, serverData.Color)
+	plannedData.Description = knownOr(plannedData.Description, serverData.Description)
+	plannedData.Exclusive = knownOr(plannedData.Exclusive, serverData.Exclusive)
+	plannedData.Id = knownOr(plannedData.Id, serverData.Id)
+	plannedData.IsArchived = knownOr(plannedData.IsArchived, serverData.IsArchived)
+	plannedData.Name = knownOr(plannedData.Name, serverData.Name)
+	plannedData.Url = knownOr(plannedData.Url, serverData.Url)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plannedData)...)
 }

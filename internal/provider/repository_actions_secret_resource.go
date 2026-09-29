@@ -81,6 +81,31 @@ func (d *RepositoryActionsSecretResource) Configure(ctx context.Context, req res
 	d.client, _ = req.ProviderData.(*client.Client)
 }
 
+func populateRepositoryActionsSecretResourceModel(data *RepositoryActionsSecretResourceModel, secret *client.RepositoryActionsSecret) {
+	data.CreatedAt = timetypes.NewRFC3339TimeValue(secret.CreatedAt)
+	data.Name = types.StringValue(secret.Name)
+	// data.Data is ignored because the secrets list API call obviously does not return it.
+}
+
+func (d *RepositoryActionsSecretResource) getRepositoryActionsSecret(ctx context.Context, data *RepositoryActionsSecretResourceModel) (*client.RepositoryActionsSecret, error) {
+	// We can only list all secrets, the API has no endpoint for getting a single one.
+	secrets, err := d.client.RepositoryActionsSecretsList(
+		ctx,
+		data.Owner.ValueString(),
+		data.Repository.ValueString())
+	if err != nil {
+		return nil, fmt.Errorf("failed to list repository actions secrets: %w", err)
+	}
+	// Secret names are case insensitive and stored uppercased.
+	name := strings.ToUpper(data.Name.ValueString())
+	for i := range secrets {
+		if secrets[i].Name == name {
+			return &secrets[i], nil
+		}
+	}
+	return nil, fmt.Errorf("failed to find repository actions secret %q", name)
+}
+
 func (d *RepositoryActionsSecretResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var data RepositoryActionsSecretResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
@@ -97,12 +122,12 @@ func (d *RepositoryActionsSecretResource) Create(ctx context.Context, req resour
 		resp.Diagnostics.AddError("CreateRepositoryActionsSecret", fmt.Sprintf("failed to create or update repository actions secret: %s", err))
 		return
 	}
-	secret, err := d.getRepositoryActionsSecret(ctx, data.Owner, data.Repository, data.Name)
+	secret, err := d.getRepositoryActionsSecret(ctx, &data)
 	if err != nil {
 		resp.Diagnostics.AddError("CreateRepositoryActionsSecret", err.Error())
 		return
 	}
-	data.CreatedAt = secret.CreatedAt
+	populateRepositoryActionsSecretResourceModel(&data, secret)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -123,69 +148,44 @@ func (d *RepositoryActionsSecretResource) Delete(ctx context.Context, req resour
 	}
 }
 
-func (d *RepositoryActionsSecretResource) getRepositoryActionsSecret(
-	ctx context.Context,
-	owner types.String,
-	repository types.String,
-	name types.String,
-) (*RepositoryActionsSecretResourceModel, error) {
-	secrets, err := d.client.RepositoryActionsSecretsList(
-		ctx,
-		owner.ValueString(),
-		repository.ValueString())
-	if err != nil {
-		return nil, fmt.Errorf("failed to list repository actions secrets: %w", err)
-	}
-	nameStr := strings.ToUpper(name.ValueString())
-	for _, secret := range secrets {
-		if secret.Name == nameStr {
-			created := timetypes.NewRFC3339TimeValue(secret.CreatedAt)
-			return &RepositoryActionsSecretResourceModel{
-				CreatedAt: created,
-				Name:      types.StringValue(secret.Name),
-			}, nil
-		}
-	}
-	return nil, fmt.Errorf("failed to find repository actions secret")
-}
-
 func (d *RepositoryActionsSecretResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var data RepositoryActionsSecretResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	secret, err := d.getRepositoryActionsSecret(ctx, data.Owner, data.Repository, data.Name)
+	secret, err := d.getRepositoryActionsSecret(ctx, &data)
 	if err != nil {
-		resp.Diagnostics.AddError("CreateRepositoryActionsSecret", err.Error())
+		resp.Diagnostics.AddError("ReadRepositoryActionsSecret", err.Error())
 		return
 	}
-	data.CreatedAt = secret.CreatedAt
-	data.Name = secret.Name
+	populateRepositoryActionsSecretResourceModel(&data, secret)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
 func (d *RepositoryActionsSecretResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var data RepositoryActionsSecretResourceModel
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+	var plannedData RepositoryActionsSecretResourceModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plannedData)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 	err := d.client.RepositoryActionsSecretCreateOrUpdate(
 		ctx,
-		data.Owner.ValueString(),
-		data.Repository.ValueString(),
-		data.Name.ValueString(),
-		data.Data.ValueString())
+		plannedData.Owner.ValueString(),
+		plannedData.Repository.ValueString(),
+		plannedData.Name.ValueString(),
+		plannedData.Data.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("UpdateRepositoryActionsSecret", fmt.Sprintf("failed to create or update repository actions secret: %s", err))
 		return
 	}
-	secret, err := d.getRepositoryActionsSecret(ctx, data.Owner, data.Repository, data.Name)
+	secret, err := d.getRepositoryActionsSecret(ctx, &plannedData)
 	if err != nil {
 		resp.Diagnostics.AddError("UpdateRepositoryActionsSecret", err.Error())
 		return
 	}
-	data.CreatedAt = knownOr(data.CreatedAt, secret.CreatedAt)
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	var serverData RepositoryActionsSecretResourceModel
+	populateRepositoryActionsSecretResourceModel(&serverData, secret)
+	plannedData.CreatedAt = knownOr(plannedData.CreatedAt, serverData.CreatedAt)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plannedData)...)
 }

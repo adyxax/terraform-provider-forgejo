@@ -125,37 +125,53 @@ func (d *OrganizationResource) Configure(ctx context.Context, req resource.Confi
 	d.client, _ = req.ProviderData.(*client.Client)
 }
 
+func populateOrganizationResourceModel(data *OrganizationResourceModel, organization *client.Organization) {
+	data.Description = types.StringValue(organization.Description)
+	data.Email = types.StringValue(organization.Email)
+	data.FullName = types.StringValue(organization.FullName)
+	data.Id = types.Int64Value(organization.Id)
+	data.Location = types.StringValue(organization.Location)
+	data.Name = types.StringValue(organization.Name)
+	data.RepoAdminChangeTeamAccess = types.BoolValue(organization.RepoAdminChangeTeamAccess)
+	data.Visibility = types.StringValue(organization.Visibility)
+	data.Website = types.StringValue(organization.Website)
+}
+
+func organizationPatchRequest(data *OrganizationResourceModel) *client.OrganizationPatchRequest {
+	return &client.OrganizationPatchRequest{
+		Description:               stringPointerIfKnown(data.Description),
+		Email:                     stringPointerIfKnown(data.Email),
+		FullName:                  stringPointerIfKnown(data.FullName),
+		Location:                  stringPointerIfKnown(data.Location),
+		RepoAdminChangeTeamAccess: boolPointerIfKnown(data.RepoAdminChangeTeamAccess),
+		Visibility:                data.Visibility.ValueString(),
+		Website:                   stringPointerIfKnown(data.Website),
+	}
+}
+
 func (d *OrganizationResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var data OrganizationResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	patch := organizationPatchRequest(&data)
 	request := client.OrganizationCreateRequest{
-		Description:               stringPointerIfKnown(data.Description),
-		Email:                     stringPointerIfKnown(data.Email),
-		FullName:                  stringPointerIfKnown(data.FullName),
-		Location:                  stringPointerIfKnown(data.Location),
-		RepoAdminChangeTeamAccess: boolPointerIfKnown(data.RepoAdminChangeTeamAccess),
+		Description:               patch.Description,
+		Email:                     patch.Email,
+		FullName:                  patch.FullName,
+		Location:                  patch.Location,
+		RepoAdminChangeTeamAccess: patch.RepoAdminChangeTeamAccess,
 		Username:                  data.Name.ValueString(),
-		Visibility:                data.Visibility.ValueString(),
-		Website:                   stringPointerIfKnown(data.Website),
+		Visibility:                patch.Visibility,
+		Website:                   patch.Website,
 	}
-	organization, err := d.client.OrganizationCreate(
-		ctx,
-		&request)
+	organization, err := d.client.OrganizationCreate(ctx, &request)
 	if err != nil {
 		resp.Diagnostics.AddError("CreateOrganization", fmt.Sprintf("failed to create organization: %s", err))
 		return
 	}
-	data.Description = types.StringValue(organization.Description)
-	data.Email = types.StringValue(organization.Email)
-	data.FullName = types.StringValue(organization.FullName)
-	data.Id = types.Int64Value(organization.Id)
-	data.Location = types.StringValue(organization.Location)
-	data.RepoAdminChangeTeamAccess = types.BoolValue(organization.RepoAdminChangeTeamAccess)
-	data.Visibility = types.StringValue(organization.Visibility)
-	data.Website = types.StringValue(organization.Website)
+	populateOrganizationResourceModel(&data, organization)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -165,16 +181,17 @@ func (d *OrganizationResource) Delete(ctx context.Context, req resource.DeleteRe
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	err := d.client.OrganizationDelete(
-		ctx,
-		data.Name.ValueString())
-	if err != nil {
+	if err := d.client.OrganizationDelete(ctx, data.Name.ValueString()); err != nil {
 		resp.Diagnostics.AddError("DeleteOrganization", fmt.Sprintf("failed to delete organization: %s", err))
 		return
 	}
 }
 
 func (r *OrganizationResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	if req.ID == "" {
+		resp.Diagnostics.AddError("ImportOrganization", "Expected import identifier to be the organization's name")
+		return
+	}
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("name"), req.ID)...)
 }
 
@@ -184,21 +201,12 @@ func (d *OrganizationResource) Read(ctx context.Context, req resource.ReadReques
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	organization, err := d.client.OrganizationGet(
-		ctx,
-		data.Name.ValueString())
+	organization, err := d.client.OrganizationGet(ctx, data.Name.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("ReadOrganization", fmt.Sprintf("failed to get organization: %s", err))
 		return
 	}
-	data.Description = types.StringValue(organization.Description)
-	data.Email = types.StringValue(organization.Email)
-	data.FullName = types.StringValue(organization.FullName)
-	data.Id = types.Int64Value(organization.Id)
-	data.Location = types.StringValue(organization.Location)
-	data.RepoAdminChangeTeamAccess = types.BoolValue(organization.RepoAdminChangeTeamAccess)
-	data.Visibility = types.StringValue(organization.Visibility)
-	data.Website = types.StringValue(organization.Website)
+	populateOrganizationResourceModel(&data, organization)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -210,30 +218,23 @@ func (d *OrganizationResource) Update(ctx context.Context, req resource.UpdateRe
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	request := client.OrganizationPatchRequest{
-		Description:               stringPointerIfKnown(plannedData.Description),
-		Email:                     stringPointerIfKnown(plannedData.Email),
-		FullName:                  stringPointerIfKnown(plannedData.FullName),
-		Location:                  stringPointerIfKnown(plannedData.Location),
-		RepoAdminChangeTeamAccess: boolPointerIfKnown(plannedData.RepoAdminChangeTeamAccess),
-		Visibility:                plannedData.Visibility.ValueString(),
-		Website:                   stringPointerIfKnown(plannedData.Website),
-	}
 	organization, err := d.client.OrganizationUpdate(
 		ctx,
-		plannedData.Name.ValueString(),
-		&request)
+		stateData.Name.ValueString(),
+		organizationPatchRequest(&plannedData))
 	if err != nil {
 		resp.Diagnostics.AddError("UpdateOrganization", fmt.Sprintf("failed to update organization: %s", err))
 		return
 	}
-	plannedData.Description = types.StringValue(organization.Description)
-	plannedData.Email = types.StringValue(organization.Email)
-	plannedData.FullName = types.StringValue(organization.FullName)
-	plannedData.Id = types.Int64Value(organization.Id)
-	plannedData.Location = types.StringValue(organization.Location)
-	plannedData.RepoAdminChangeTeamAccess = types.BoolValue(organization.RepoAdminChangeTeamAccess)
-	plannedData.Visibility = types.StringValue(organization.Visibility)
-	plannedData.Website = types.StringValue(organization.Website)
+	var serverData OrganizationResourceModel
+	populateOrganizationResourceModel(&serverData, organization)
+	plannedData.Description = knownOr(plannedData.Description, serverData.Description)
+	plannedData.Email = knownOr(plannedData.Email, serverData.Email)
+	plannedData.FullName = knownOr(plannedData.FullName, serverData.FullName)
+	plannedData.Id = knownOr(plannedData.Id, serverData.Id)
+	plannedData.Location = knownOr(plannedData.Location, serverData.Location)
+	plannedData.RepoAdminChangeTeamAccess = knownOr(plannedData.RepoAdminChangeTeamAccess, serverData.RepoAdminChangeTeamAccess)
+	plannedData.Visibility = knownOr(plannedData.Visibility, serverData.Visibility)
+	plannedData.Website = knownOr(plannedData.Website, serverData.Website)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plannedData)...)
 }

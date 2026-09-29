@@ -69,6 +69,11 @@ func (d *RepositoryActionsVariableResource) Configure(ctx context.Context, req r
 	d.client, _ = req.ProviderData.(*client.Client)
 }
 
+func populateRepositoryActionsVariableResourceModel(data *RepositoryActionsVariableResourceModel, variable *client.RepositoryActionsVariable) {
+	data.Data = types.StringValue(variable.Data)
+	data.Name = types.StringValue(variable.Name)
+}
+
 func (d *RepositoryActionsVariableResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var data RepositoryActionsVariableResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
@@ -134,8 +139,7 @@ func (d *RepositoryActionsVariableResource) Read(ctx context.Context, req resour
 		resp.Diagnostics.AddError("ReadRepositoryActionsVariable", fmt.Sprintf("failed to get repository actions variable: %s", err))
 		return
 	}
-	data.Data = types.StringValue(variable.Data)
-	data.Name = types.StringValue(variable.Name)
+	populateRepositoryActionsVariableResourceModel(&data, variable)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 

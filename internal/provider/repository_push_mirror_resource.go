@@ -110,6 +110,13 @@ func (d *RepositoryPushMirrorResource) Configure(ctx context.Context, req resour
 	d.client, _ = req.ProviderData.(*client.Client)
 }
 
+func populateRepositoryPushMirrorResourceModel(data *RepositoryPushMirrorResourceModel, pushMirror *client.RepositoryPushMirror) {
+	// Only the computed attributes are refreshed from the server, as all the
+	// others have RequiresReplace anyway.
+	data.Created = timetypes.NewRFC3339TimeValue(pushMirror.Created)
+	data.Name = types.StringValue(pushMirror.RemoteName)
+}
+
 func (d *RepositoryPushMirrorResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var data RepositoryPushMirrorResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
@@ -130,8 +137,7 @@ func (d *RepositoryPushMirrorResource) Create(ctx context.Context, req resource.
 		resp.Diagnostics.AddError("CreateRepositoryPushMirror", fmt.Sprintf("failed to create repository push mirror: %s", err))
 		return
 	}
-	data.Created = timetypes.NewRFC3339TimeValue(pushMirror.Created)
-	data.Name = types.StringValue(pushMirror.RemoteName)
+	populateRepositoryPushMirrorResourceModel(&data, pushMirror)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -152,40 +158,26 @@ func (d *RepositoryPushMirrorResource) Delete(ctx context.Context, req resource.
 	}
 }
 
-func (d *RepositoryPushMirrorResource) getRepositoryPushMirror(
-	ctx context.Context,
-	owner types.String,
-	repository types.String,
-	name types.String,
-) (*client.RepositoryPushMirror, error) {
-	pushMirror, err := d.client.RepositoryPushMirrorGet(
-		ctx,
-		owner.ValueString(),
-		repository.ValueString(),
-		name.ValueString(),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get repository push mirror: %w", err)
-	}
-	return pushMirror, nil
-}
-
 func (d *RepositoryPushMirrorResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var data RepositoryPushMirrorResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	pushMirror, err := d.getRepositoryPushMirror(ctx, data.Owner, data.Repository, data.Name)
+	pushMirror, err := d.client.RepositoryPushMirrorGet(
+		ctx,
+		data.Owner.ValueString(),
+		data.Repository.ValueString(),
+		data.Name.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("ReadRepositoryPushMirror", fmt.Sprintf("failed to get repository push mirror: %s", err))
 		return
 	}
-	data.Created = timetypes.NewRFC3339TimeValue(pushMirror.Created)
-	data.Name = types.StringValue(pushMirror.RemoteName)
+	populateRepositoryPushMirrorResourceModel(&data, pushMirror)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
 func (d *RepositoryPushMirrorResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	// Every configurable attribute has a RequiresReplace plan modifier
 	resp.Diagnostics.AddError("UpdateRepositoryPushMirror", "unreachable code")
 }
