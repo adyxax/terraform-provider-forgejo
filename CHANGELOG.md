@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## Unreleased
+## 1.7.0 - 2026-11-26
 
 ### Added
 
@@ -10,6 +10,10 @@ All notable changes to this project will be documented in this file.
   `allow_fast_forward_only_merge`, `allow_merge_commits`, `allow_rebase`,
   `allow_rebase_explicit`, `allow_squash_merge`,
   `default_delete_branch_after_merge`, `default_merge_style`.
+
+### Changed
+
+- Updated dependencies.
 
 ## 1.6.1 - 2026-10-22
 
