@@ -36,7 +36,14 @@ resource "forgejo_repository" "organization_example" {
 
 ### Optional
 
+- `allow_fast_forward_only_merge` (Boolean) If true, pull requests can be merged by fast-forwarding only. If unset, the server default will be left as is.
+- `allow_merge_commits` (Boolean) If true, pull requests can be merged with a merge commit. If unset, the server default will be left as is.
+- `allow_rebase` (Boolean) If true, pull requests can be rebased then fast-forwarded. If unset, the server default will be left as is.
+- `allow_rebase_explicit` (Boolean) If true, pull requests can be rebased then merged with a merge commit (--no-ff). If unset, the server default will be left as is.
+- `allow_squash_merge` (Boolean) If true, pull requests can be squashed then merged. If unset, the server default will be left as is.
 - `default_branch` (String) Name of the default branch. Defaults to "main".
+- `default_delete_branch_after_merge` (Boolean) If true, the pull request branch is deleted after merge by default. If unset, the server default will be left as is.
+- `default_merge_style` (String) The default merge style for pull requests. Can be `merge`, `rebase`, `rebase-merge`, `squash`, `fast-forward-only`, `manually-merged` or `rebase-update-only`. If unset, the server default will be left as is.
 - `description` (String) A description string.
 - `has_actions` (Boolean) If true, the actions unit will be enabled. If false, the actions unit will be disabled. If unset, the server default will be left as is.
 - `has_issues` (Boolean) If true, the issues unit will be enabled. If false, the issues unit will be disabled. If unset, the server default will be left as is.
