@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Added
+
+- Added the following new attributes to the repository resource:
+  `allow_fast_forward_only_merge`, `allow_merge_commits`, `allow_rebase`,
+  `allow_rebase_explicit`, `allow_squash_merge`,
+  `default_delete_branch_after_merge`, `default_merge_style`.
+
 ## 1.6.1 - 2026-10-22
 
 ### Changed

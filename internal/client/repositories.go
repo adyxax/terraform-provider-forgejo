@@ -109,17 +109,24 @@ type RepositoryCreateRequest struct {
 }
 
 type RepositoryUpdateRequest struct {
-	DefaultBranch   string  `json:"default_branch"`
-	Description     *string `json:"description,omitempty"`
-	HasActions      *bool   `json:"has_actions,omitempty"`
-	HasIssues       *bool   `json:"has_issues,omitempty"`
-	HasPackages     *bool   `json:"has_packages,omitempty"`
-	HasProjects     *bool   `json:"has_projects,omitempty"`
-	HasPullRequests *bool   `json:"has_pull_requests,omitempty"`
-	HasReleases     *bool   `json:"has_releases,omitempty"`
-	HasWiki         *bool   `json:"has_wiki,omitempty"`
-	Name            string  `json:"name"`
-	Private         bool    `json:"private"`
+	AllowFastForwardOnlyMerge     *bool   `json:"allow_fast_forward_only_merge,omitempty"`
+	AllowMergeCommits             *bool   `json:"allow_merge_commits,omitempty"`
+	AllowRebase                   *bool   `json:"allow_rebase,omitempty"`
+	AllowRebaseExplicit           *bool   `json:"allow_rebase_explicit,omitempty"`
+	AllowSquashMerge              *bool   `json:"allow_squash_merge,omitempty"`
+	DefaultBranch                 string  `json:"default_branch"`
+	DefaultDeleteBranchAfterMerge *bool   `json:"default_delete_branch_after_merge,omitempty"`
+	DefaultMergeStyle             *string `json:"default_merge_style,omitempty"`
+	Description                   *string `json:"description,omitempty"`
+	HasActions                    *bool   `json:"has_actions,omitempty"`
+	HasIssues                     *bool   `json:"has_issues,omitempty"`
+	HasPackages                   *bool   `json:"has_packages,omitempty"`
+	HasProjects                   *bool   `json:"has_projects,omitempty"`
+	HasPullRequests               *bool   `json:"has_pull_requests,omitempty"`
+	HasReleases                   *bool   `json:"has_releases,omitempty"`
+	HasWiki                       *bool   `json:"has_wiki,omitempty"`
+	Name                          string  `json:"name"`
+	Private                       bool    `json:"private"`
 }
 
 func (c *Client) OrganizationRepositoryCreate(ctx context.Context, owner string, payload *RepositoryCreateRequest) (*Repository, error) {

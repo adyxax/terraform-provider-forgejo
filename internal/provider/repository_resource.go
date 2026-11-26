@@ -7,6 +7,7 @@ import (
 
 	"git.adyxax.org/adyxax/terraform-provider-forgejo/internal/client"
 	"github.com/hashicorp/terraform-plugin-framework-timetypes/timetypes"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -15,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -29,19 +31,26 @@ func NewRepositoryResource() resource.Resource {
 }
 
 type RepositoryResourceModel struct {
-	CreatedAt       timetypes.RFC3339 `tfsdk:"created_at"`
-	DefaultBranch   types.String      `tfsdk:"default_branch"`
-	Description     types.String      `tfsdk:"description"`
-	HasActions      types.Bool        `tfsdk:"has_actions"`
-	HasIssues       types.Bool        `tfsdk:"has_issues"`
-	HasPackages     types.Bool        `tfsdk:"has_packages"`
-	HasProjects     types.Bool        `tfsdk:"has_projects"`
-	HasPullRequests types.Bool        `tfsdk:"has_pull_requests"`
-	HasReleases     types.Bool        `tfsdk:"has_releases"`
-	HasWiki         types.Bool        `tfsdk:"has_wiki"`
-	Name            types.String      `tfsdk:"name"`
-	Owner           types.String      `tfsdk:"owner"`
-	Private         types.Bool        `tfsdk:"private"`
+	AllowFastForwardOnlyMerge     types.Bool        `tfsdk:"allow_fast_forward_only_merge"`
+	AllowMergeCommits             types.Bool        `tfsdk:"allow_merge_commits"`
+	AllowRebase                   types.Bool        `tfsdk:"allow_rebase"`
+	AllowRebaseExplicit           types.Bool        `tfsdk:"allow_rebase_explicit"`
+	AllowSquashMerge              types.Bool        `tfsdk:"allow_squash_merge"`
+	CreatedAt                     timetypes.RFC3339 `tfsdk:"created_at"`
+	DefaultBranch                 types.String      `tfsdk:"default_branch"`
+	DefaultDeleteBranchAfterMerge types.Bool        `tfsdk:"default_delete_branch_after_merge"`
+	DefaultMergeStyle             types.String      `tfsdk:"default_merge_style"`
+	Description                   types.String      `tfsdk:"description"`
+	HasActions                    types.Bool        `tfsdk:"has_actions"`
+	HasIssues                     types.Bool        `tfsdk:"has_issues"`
+	HasPackages                   types.Bool        `tfsdk:"has_packages"`
+	HasProjects                   types.Bool        `tfsdk:"has_projects"`
+	HasPullRequests               types.Bool        `tfsdk:"has_pull_requests"`
+	HasReleases                   types.Bool        `tfsdk:"has_releases"`
+	HasWiki                       types.Bool        `tfsdk:"has_wiki"`
+	Name                          types.String      `tfsdk:"name"`
+	Owner                         types.String      `tfsdk:"owner"`
+	Private                       types.Bool        `tfsdk:"private"`
 }
 
 func (d *RepositoryResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -51,6 +60,46 @@ func (d *RepositoryResource) Metadata(ctx context.Context, req resource.Metadata
 func (d *RepositoryResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
+			"allow_fast_forward_only_merge": schema.BoolAttribute{
+				Computed:            true,
+				MarkdownDescription: "If true, pull requests can be merged by fast-forwarding only. If unset, the server default will be left as is.",
+				Optional:            true,
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"allow_merge_commits": schema.BoolAttribute{
+				Computed:            true,
+				MarkdownDescription: "If true, pull requests can be merged with a merge commit. If unset, the server default will be left as is.",
+				Optional:            true,
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"allow_rebase": schema.BoolAttribute{
+				Computed:            true,
+				MarkdownDescription: "If true, pull requests can be rebased then fast-forwarded. If unset, the server default will be left as is.",
+				Optional:            true,
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"allow_rebase_explicit": schema.BoolAttribute{
+				Computed:            true,
+				MarkdownDescription: "If true, pull requests can be rebased then merged with a merge commit (--no-ff). If unset, the server default will be left as is.",
+				Optional:            true,
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"allow_squash_merge": schema.BoolAttribute{
+				Computed:            true,
+				MarkdownDescription: "If true, pull requests can be squashed then merged. If unset, the server default will be left as is.",
+				Optional:            true,
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
+				},
+			},
 			"created_at": schema.StringAttribute{
 				Computed:            true,
 				CustomType:          timetypes.RFC3339Type{},
@@ -64,6 +113,25 @@ func (d *RepositoryResource) Schema(ctx context.Context, req resource.SchemaRequ
 				Default:             stringdefault.StaticString("main"),
 				MarkdownDescription: "Name of the default branch. Defaults to \"main\".",
 				Optional:            true,
+			},
+			"default_delete_branch_after_merge": schema.BoolAttribute{
+				Computed:            true,
+				MarkdownDescription: "If true, the pull request branch is deleted after merge by default. If unset, the server default will be left as is.",
+				Optional:            true,
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"default_merge_style": schema.StringAttribute{
+				Computed:            true,
+				MarkdownDescription: "The default merge style for pull requests. Can be `merge`, `rebase`, `rebase-merge`, `squash`, `fast-forward-only`, `manually-merged` or `rebase-update-only`. If unset, the server default will be left as is.",
+				Optional:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+				Validators: []validator.String{
+					stringvalidator.OneOf("merge", "rebase", "rebase-merge", "squash", "fast-forward-only", "manually-merged", "rebase-update-only"),
+				},
 			},
 			"description": schema.StringAttribute{
 				Computed:            true,
@@ -158,8 +226,15 @@ func (d *RepositoryResource) Configure(ctx context.Context, req resource.Configu
 }
 
 func populateRepositoryResourceModel(data *RepositoryResourceModel, repository *client.Repository) {
+	data.AllowFastForwardOnlyMerge = types.BoolValue(repository.AllowFastForwardOnlyMerge)
+	data.AllowMergeCommits = types.BoolValue(repository.AllowMergeCommits)
+	data.AllowRebase = types.BoolValue(repository.AllowRebase)
+	data.AllowRebaseExplicit = types.BoolValue(repository.AllowRebaseExplicit)
+	data.AllowSquashMerge = types.BoolValue(repository.AllowSquashMerge)
 	data.CreatedAt = timetypes.NewRFC3339TimeValue(repository.CreatedAt)
 	data.DefaultBranch = types.StringValue(repository.DefaultBranch)
+	data.DefaultDeleteBranchAfterMerge = types.BoolValue(repository.DefaultDeleteBranchAfterMerge)
+	data.DefaultMergeStyle = types.StringValue(repository.DefaultMergeStyle)
 	data.Description = types.StringValue(repository.Description)
 	data.HasActions = types.BoolValue(repository.HasActions)
 	data.HasIssues = types.BoolValue(repository.HasIssues)
@@ -175,17 +250,24 @@ func populateRepositoryResourceModel(data *RepositoryResourceModel, repository *
 
 func repositoryUpdateRequest(data *RepositoryResourceModel) *client.RepositoryUpdateRequest {
 	return &client.RepositoryUpdateRequest{
-		DefaultBranch:   data.DefaultBranch.ValueString(),
-		Description:     stringPointerIfKnown(data.Description),
-		HasActions:      boolPointerIfKnown(data.HasActions),
-		HasIssues:       boolPointerIfKnown(data.HasIssues),
-		HasPackages:     boolPointerIfKnown(data.HasPackages),
-		HasProjects:     boolPointerIfKnown(data.HasProjects),
-		HasPullRequests: boolPointerIfKnown(data.HasPullRequests),
-		HasReleases:     boolPointerIfKnown(data.HasReleases),
-		HasWiki:         boolPointerIfKnown(data.HasWiki),
-		Name:            data.Name.ValueString(),
-		Private:         data.Private.ValueBool(),
+		AllowFastForwardOnlyMerge:     boolPointerIfKnown(data.AllowFastForwardOnlyMerge),
+		AllowMergeCommits:             boolPointerIfKnown(data.AllowMergeCommits),
+		AllowRebase:                   boolPointerIfKnown(data.AllowRebase),
+		AllowRebaseExplicit:           boolPointerIfKnown(data.AllowRebaseExplicit),
+		AllowSquashMerge:              boolPointerIfKnown(data.AllowSquashMerge),
+		DefaultBranch:                 data.DefaultBranch.ValueString(),
+		DefaultDeleteBranchAfterMerge: boolPointerIfKnown(data.DefaultDeleteBranchAfterMerge),
+		DefaultMergeStyle:             stringPointerIfKnown(data.DefaultMergeStyle),
+		Description:                   stringPointerIfKnown(data.Description),
+		HasActions:                    boolPointerIfKnown(data.HasActions),
+		HasIssues:                     boolPointerIfKnown(data.HasIssues),
+		HasPackages:                   boolPointerIfKnown(data.HasPackages),
+		HasProjects:                   boolPointerIfKnown(data.HasProjects),
+		HasPullRequests:               boolPointerIfKnown(data.HasPullRequests),
+		HasReleases:                   boolPointerIfKnown(data.HasReleases),
+		HasWiki:                       boolPointerIfKnown(data.HasWiki),
+		Name:                          data.Name.ValueString(),
+		Private:                       data.Private.ValueBool(),
 	}
 }
 
@@ -294,8 +376,15 @@ func (d *RepositoryResource) Update(ctx context.Context, req resource.UpdateRequ
 	}
 	var serverData RepositoryResourceModel
 	populateRepositoryResourceModel(&serverData, repository)
+	plannedData.AllowFastForwardOnlyMerge = knownOr(plannedData.AllowFastForwardOnlyMerge, serverData.AllowFastForwardOnlyMerge)
+	plannedData.AllowMergeCommits = knownOr(plannedData.AllowMergeCommits, serverData.AllowMergeCommits)
+	plannedData.AllowRebase = knownOr(plannedData.AllowRebase, serverData.AllowRebase)
+	plannedData.AllowRebaseExplicit = knownOr(plannedData.AllowRebaseExplicit, serverData.AllowRebaseExplicit)
+	plannedData.AllowSquashMerge = knownOr(plannedData.AllowSquashMerge, serverData.AllowSquashMerge)
 	plannedData.CreatedAt = knownOr(plannedData.CreatedAt, serverData.CreatedAt)
 	plannedData.DefaultBranch = knownOr(plannedData.DefaultBranch, serverData.DefaultBranch)
+	plannedData.DefaultDeleteBranchAfterMerge = knownOr(plannedData.DefaultDeleteBranchAfterMerge, serverData.DefaultDeleteBranchAfterMerge)
+	plannedData.DefaultMergeStyle = knownOr(plannedData.DefaultMergeStyle, serverData.DefaultMergeStyle)
 	plannedData.Description = knownOr(plannedData.Description, serverData.Description)
 	plannedData.HasActions = knownOr(plannedData.HasActions, serverData.HasActions)
 	plannedData.HasIssues = knownOr(plannedData.HasIssues, serverData.HasIssues)
